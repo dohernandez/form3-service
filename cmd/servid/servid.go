@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dohernandez/form3-service/internal/platform/config"
 	"github.com/dohernandez/form3-service/pkg/version"
 )
 
@@ -12,5 +13,10 @@ func main() {
 		fmt.Println(version.Info().String())
 
 		return
+	}
+
+	cfg, err := config.LoadEnv()
+	if err != nil {
+		panic("failed to load config: " + err.Error())
 	}
 }
