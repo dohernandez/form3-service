@@ -1,4 +1,4 @@
-package base
+package app
 
 import (
 	logging "github.com/hellofresh/logging-go"
@@ -20,9 +20,4 @@ type Config struct {
 	Environment string `envconfig:"ENVIRONMENT" default:"staging"`
 
 	Log logging.LogConfig
-}
-
-// LogConfig return Logger Configuration
-func (c Config) LogConfig() logging.LogConfig {
-	return c.Log
 }
