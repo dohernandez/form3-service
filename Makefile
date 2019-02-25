@@ -18,17 +18,26 @@ export LDFLAGS = -X $(VERSION_PKG).version=$(VERSION) -X $(VERSION_PKG).branch=$
 
 BUILD_DIR ?= bin
 
-## -- Misc --
+# Filters variables
+CFLAGS=-g
+export CFLAGS
 
 ## Init the application
+##
+## Arguments:
+##   API_PORT     Requires port to run the service
 init: envfile deps
+	@printf ">> "
+	export FORM3_SERVICE_HOST_PORT=${API_PORT}
+
+## -- Misc --
 
 ## Build binary
 build:
 	@echo ">> building binary"
 	@go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/${SERVICE_NAME} cmd/servid/*
 
-## Run application (before exec this command make sure `make init` was exec before)
+## Run application (before exec this command make sure `make init` was executed)
 run:
 	@echo ">> running app"
 	@go run -ldflags "${LDFLAGS}" cmd/servid/*
@@ -63,7 +72,7 @@ deps-vendor:
 
 ## -- Environment modifiers --
 
-## Run command with .env vars (before exec this command make sure `make init` was exec before)
+## Run command with .env vars (before exec this command make sure `make init` was executed)
 env:
 	@echo ">> running with .env"
 	@$(APP_SCRIPTS_PATH)/env-run.sh make $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -71,8 +80,9 @@ env:
 	@echo "Job done, stopping make, please disregard following 'make: *** [env] Error 1'"
 	@exit 1
 
-## Generate .env file based on .env.template
+## Generate .env file based on .env.template if not exists
 envfile:
+	@echo ">> initializing .env file"
 	@test -s ./.env || (echo ">> copying .env.template to .env" && cp .env.template .env)
 
 ## -- Test --
@@ -117,7 +127,7 @@ docs:
 
 ## -- Docker --
 
-## Run command with docker-compose (before exec this command make sure `make init` was exec before)
+## Run command with docker-compose (before exec this command make sure `make init` was executed)
 docker:
 	@echo ">> running with docker-compose"
 	@docker-compose run $(DOCKER_SERVICE_PORTS) --rm app make $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -127,8 +137,7 @@ docker:
 
 ## -- API service --
 
-## Start API service (before exec this command make sure you have `FORM3_SERVICE_HOST_PORT` defined
-## in your env variables and `make init` was exec before too)
+## Start API service (before exec this command make sure `make init` was executed)
 servid-start:
 	@echo ">> starting API service in port ${FORM3_SERVICE_HOST_PORT}"
 	@docker-compose up -d
@@ -136,15 +145,20 @@ servid-start:
 ## Stop API service
 servid-stop:
 	@echo ">> stop API service in port ${FORM3_SERVICE_HOST_PORT}"
-	@docker-compose up -d
+	@docker-compose down -v
 
-.PHONY: init build run run-compile-daemon lint fix-lint deps test test-unit test-integration docker servid-start servid-stop help
+## Log API service
+servid-api-log:
+	@echo ">> tailing api log"
+	@docker-compose logs api
+
+.PHONY: init build run run-compile-daemon lint fix-lint deps test test-unit test-integration docker servid-start servid-stop servid-api-log help
 
 .DEFAULT_GOAL := help
 HELP_SECTION_WIDTH="      "
 HELP_DESC_WIDTH="                       "
 help:
-	@printf "form3-service routine operations\n";
+	@printf "form3-service routine operations\n\n";
 	@awk '{ \
 			if ($$0 ~ /^.PHONY: [a-zA-Z\-\_0-9]+$$/) { \
 				helpCommand = substr($$0, index($$0, ":") + 2); \
@@ -175,4 +189,4 @@ help:
 		}' \
 		$(MAKEFILE_LIST)
 	@printf "\nUsage\n";
-	@printf "  make <flags> [options]";
+	@printf "  make <flags> [options]\n";
