@@ -15,5 +15,17 @@ func NewAppContainer(cfg Config) (*Container, error) {
 	}
 	c.WithLogger(logger)
 
+	var panicCatcher []PanicCatcher
+	if cfg.Environment == EnvDev {
+		panicCatcher = append(panicCatcher, PanicPrinter)
+	} else {
+		panicCatcher = append(
+			panicCatcher,
+			PanicLogger(logger),
+			PanicResponse(logger, false),
+		)
+	}
+	c.WithPanicCatcher(panicCatcher)
+
 	return c, nil
 }

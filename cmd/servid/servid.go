@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/dohernandez/form3-service/internal/platform/app"
+	"github.com/dohernandez/form3-service/internal/platform/http"
+	"github.com/dohernandez/form3-service/pkg/http/server"
 	"github.com/dohernandez/form3-service/pkg/version"
 )
 
@@ -24,4 +26,15 @@ func main() {
 	if err != nil {
 		panic("failed init application container: " + err.Error())
 	}
+
+	c.Logger().Info("Creating routers")
+	router := http.NewRouter(c)
+
+	c.Logger().Infof("Starting server at port http://0.0.0.0:%d", cfg.Port)
+	(&server.Instance{
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
+		Handler: router,
+		Logger:  c.Logger(),
+		Closer:  c,
+	}).Start()
 }

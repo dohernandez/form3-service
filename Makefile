@@ -13,7 +13,7 @@ revision = $(shell git log -1 --pretty=format:"%H")
 build_user = $(USER)
 build_date = $(shell date +%FT%T%Z)
 
-VERSION_PKG = $(APP_PATH)/pkg/version
+VERSION_PKG = $(IMPORT_PATH)/pkg/version
 export LDFLAGS = -X $(VERSION_PKG).version=$(VERSION) -X $(VERSION_PKG).branch=$(branch) -X $(VERSION_PKG).revision=$(revision) -X $(VERSION_PKG).buildUser=$(build_user) -X $(VERSION_PKG).buildDate=$(build_date)
 
 BUILD_DIR ?= bin
@@ -26,18 +26,18 @@ init: envfile deps
 ## Build binary
 build:
 	@echo ">> building binary"
-	@go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/${SERVICE_NAME} cmd/${SERVICE_NAME}/*
+	@go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/${SERVICE_NAME} cmd/servid/*
 
 ## Run application (before exec this command make sure `make init` was exec before)
 run:
 	@echo ">> running app"
-	@go run -ldflags "${LDFLAGS}" cmd/"${SERVICE_NAME}"/*
+	@go run -ldflags "${LDFLAGS}" cmd/servid/*
 
 ## Run application with CompileDaemon (automatic rebuild on code change)
 run-compile-daemon:
 	@test -s $(shell go env GOPATH)/bin/CompileDaemon || (echo ">> installing CompileDaemon" && go get -u github.com/githubnemo/CompileDaemon)
 	@echo ">> running app with CompileDaemon"
-	@$(shell go env GOPATH)/bin/CompileDaemon -exclude-dir=vendor -build='make build migrate' -command='$(BUILD_DIR)/${SERVICE_NAME}' -graceful-kill
+	@$(shell go env GOPATH)/bin/CompileDaemon -exclude-dir=vendor -color=true -build='make build' -command='$(BUILD_DIR)/${SERVICE_NAME}' -graceful-kill
 
 ## Check with golangci-lint
 lint:
@@ -118,7 +118,20 @@ docker:
 	@echo "Job done, stopping make, please disregard following 'make: *** [docker-tool] Error 1'"
 	@exit 1
 
-.PHONY: init build run run-compile-daemon lint fix-lint deps test test-unit test-integration docker help
+## -- API service --
+
+## Start API service (before exec this command make sure you have `FORM3_SERVICE_HOST_PORT` defined
+## in your env variables and `make init` was exec before too)
+servid-start:
+	@echo ">> starting API service in port ${FORM3_SERVICE_HOST_PORT}"
+	@docker-compose up -d
+
+## Stop API service
+servid-stop:
+	@echo ">> stop API service in port ${FORM3_SERVICE_HOST_PORT}"
+	@docker-compose up -d
+
+.PHONY: init build run run-compile-daemon lint fix-lint deps test test-unit test-integration docker servid-start servid-stop help
 
 .DEFAULT_GOAL := help
 HELP_SECTION_WIDTH="      "
@@ -155,4 +168,4 @@ help:
 		}' \
 		$(MAKEFILE_LIST)
 	@printf "\nUsage\n";
-	@printf "  make  [flags] [options]";
+	@printf "  make <flags> [options]";

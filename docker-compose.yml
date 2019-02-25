@@ -1,0 +1,13 @@
+version: '3'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: resources/images/Dockerfile.dev
+    env_file:
+      - .env
+    ports:
+      - "${FORM3_SERVICE_HOST_PORT}:8000"
+    volumes:
+      - .:/go/src/github.com/dohernandez/form3-service
+      - /tmp/go-build:/root/.cache/go-build
