@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/dohernandez/form3-service/pkg/app"
+	httpHandler "github.com/dohernandez/form3-service/pkg/http/router/handler"
 	"github.com/dohernandez/form3-service/pkg/version"
 	"github.com/go-chi/chi"
 	chiMiddleware "github.com/go-chi/chi/middleware"
@@ -35,7 +36,7 @@ func AddStandardHandlers(r chi.Router, c *app.Container) {
 	r.Get("/", func(rw http.ResponseWriter, _ *http.Request) {
 		rw.Header().Set("content-type", "text/html")
 		_, err := rw.Write([]byte("Welcome to " + c.Cfg().ServiceName +
-			`. Please read API <a href="/docs/">documentation</a>.`))
+			`. Please read API <a href="/docs/api.html">documentation</a>.`))
 		if err != nil {
 			logger.WithError(err).Error("failed to write response")
 		}
@@ -58,4 +59,7 @@ func AddStandardHandlers(r chi.Router, c *app.Container) {
 	r.Method(http.MethodGet, "/health", health.Handler())
 	logger.Debug("added `/health` route")
 
+	// Endpoint shows API documentation
+	r.Method(http.MethodGet, "/docs/*", httpHandler.NewDocsHandler("/docs", "/resources/docs"))
+	logger.Debug("added `/docs` route")
 }

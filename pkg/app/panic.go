@@ -36,7 +36,7 @@ func PanicRecoverer(panicCatcher []PanicCatcher) func(next http.Handler) http.Ha
 
 // PanicPrinter is a PanicCatcher to print panic to STDERR, suitable for dev environment
 func PanicPrinter(_ http.ResponseWriter, _ *http.Request, recover interface{}, stack []byte) {
-	println("Panic:", recover)
+	println("Panic:", fmt.Sprintf("%+v", recover))
 	println(string(stack))
 }
 

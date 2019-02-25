@@ -60,7 +60,7 @@ deps-vendor:
 	@test -s $(GOPATH)/bin/dep || GOBIN=$(GOPATH)/bin go get -u github.com/golang/dep/cmd/dep
 	@$(GOPATH)/bin/dep ensure --vendor-only
 	@git add ${APP_PATH}/Gopkg.lock
-	
+
 ## -- Environment modifiers --
 
 ## Run command with .env vars (before exec this command make sure `make init` was exec before)
@@ -107,6 +107,13 @@ test-integration:
 ifeq ($(findstring run,$(MAKECMDGOALS)),run)
     DOCKER_SERVICE_PORTS=--service-ports
 endif
+
+## -- Documentation --
+
+## Generate api documentation (raml)
+docs:
+	@docker run --rm -w "/data/" -v `pwd`:/data mattjtodd/raml2html:7.2.0 raml2html  -i "resources/docs/raml/api.raml" -o "resources/docs/api.html"
+	@git add ${APP_PATH}/resources/docs/api.html
 
 ## -- Docker --
 
