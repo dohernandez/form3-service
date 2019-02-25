@@ -1,0 +1,11 @@
+[[constraint]]
+  name = "github.com/hellofresh/logging-go"
+  version = "v0.3.0"
+
+[[constraint]]
+  name = "github.com/kelseyhightower/envconfig"
+  version = "^v1.3.0"
+
+[[constraint]]
+  name = "github.com/hellofresh/health-go"
+  version = "v2.1.0"
