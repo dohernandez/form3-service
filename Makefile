@@ -155,7 +155,7 @@ migrate-cli:
 ##   run test: "make docker test"
 docker:
 	@echo ">> running with docker-compose"
-	@docker-compose run $(DOCKER_SERVICE_PORTS) --rm app make $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+	@docker-compose run $(DOCKER_SERVICE_PORTS) --rm api make $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 	@kill -3 $$PPID
 	@echo "Job done, stopping make, please disregard following 'make: *** [docker-tool] Error 1'"
 	@exit 1
