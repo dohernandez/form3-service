@@ -11,3 +11,13 @@ services:
     volumes:
       - .:/go/src/github.com/dohernandez/form3-service
       - /tmp/go-build:/root/.cache/go-build
+
+  postgres:
+    image: postgres:11.2
+    ports:
+    - '${FORM3_POSTGRES_HOST_PORT}:5432'
+    environment:
+      LC_ALL: C.UTF-8
+      POSTGRES_DB: form3-service
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password

@@ -8,6 +8,8 @@ import (
 // Config contains structured configuration variables.
 type Config struct {
 	app.Config
+
+	DatabaseDSN string `envconfig:"DATABASE_DSN" required:"true"`
 }
 
 // LoadEnv load env variables into Config.
