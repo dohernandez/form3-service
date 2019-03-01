@@ -31,9 +31,24 @@ func NewErrResponse(err error, statusCode int) *ErrResponse {
 	return &er
 }
 
+// ErrInvalidRequest indicates Invalid Request
+func ErrInvalidRequest(err error) *ErrResponse {
+	return NewErrResponse(err, http.StatusPreconditionFailed)
+}
+
+// ErrBadRequest indicates Bad Request
+func ErrBadRequest(err error) *ErrResponse {
+	return NewErrResponse(err, http.StatusBadRequest)
+}
+
 // ErrInternal is Internal Server Error response
 func ErrInternal(err error) *ErrResponse {
 	return NewErrResponse(err, http.StatusInternalServerError)
+}
+
+// ErrNotFound indicates Not Found response status
+func ErrNotFound(err error) *ErrResponse {
+	return NewErrResponse(err, http.StatusNotFound)
 }
 
 // ErrResponse is an error response renderer
