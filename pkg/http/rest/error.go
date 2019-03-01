@@ -11,6 +11,46 @@ type HTTPError interface {
 	HTTPError() *ErrResponse
 }
 
+var (
+	_ render.Renderer = &ErrResponse{}
+	_ HTTPError       = &ErrResponse{}
+)
+
+// NewErrResponse creates ErrResponse for error and http status code
+func NewErrResponse(err error, statusCode int) *ErrResponse {
+	er := ErrResponse{
+		HTTPStatusCode: statusCode,
+		StatusText:     http.StatusText(statusCode),
+	}
+
+	if err != nil {
+		er.Err = err
+		er.ErrorText = err.Error()
+	}
+
+	return &er
+}
+
+// ErrInvalidRequest indicates Invalid Request
+func ErrInvalidRequest(err error) *ErrResponse {
+	return NewErrResponse(err, http.StatusPreconditionFailed)
+}
+
+// ErrBadRequest indicates Bad Request
+func ErrBadRequest(err error) *ErrResponse {
+	return NewErrResponse(err, http.StatusBadRequest)
+}
+
+// ErrInternal is Internal Server Error response
+func ErrInternal(err error) *ErrResponse {
+	return NewErrResponse(err, http.StatusInternalServerError)
+}
+
+// ErrNotFound indicates Not Found response status
+func ErrNotFound(err error) *ErrResponse {
+	return NewErrResponse(err, http.StatusNotFound)
+}
+
 // ErrResponse is an error response renderer
 type ErrResponse struct {
 	Err            error `json:"-"` // low-level runtime error
