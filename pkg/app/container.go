@@ -9,7 +9,7 @@ type Container struct {
 	// panicCatchers allows control of panic handling
 	panicCatchers []PanicCatcher
 
-	logger logrus.FieldLogger
+	logger *logrus.Logger
 	closer func() error
 }
 
@@ -25,12 +25,12 @@ func (c *Container) Cfg() Config {
 }
 
 // WithLogger sets logger instance
-func (c *Container) WithLogger(logger logrus.FieldLogger) {
+func (c *Container) WithLogger(logger *logrus.Logger) {
 	c.logger = logger
 }
 
 // Logger returns app-level logger
-func (c *Container) Logger() logrus.FieldLogger {
+func (c *Container) Logger() *logrus.Logger {
 	if c.logger == nil {
 		c.logger = logrus.New()
 	}
