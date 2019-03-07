@@ -4,7 +4,7 @@ import "context"
 
 type contextKey string
 
-const ctxKey = contextKey("id")
+const ctxKey = contextKey("reqID")
 
 // ToContext sets request ID to context
 func ToContext(ctx context.Context, reqID string) context.Context {

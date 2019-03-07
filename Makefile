@@ -22,13 +22,16 @@ BUILD_DIR ?= bin
 CFLAGS=-g
 export CFLAGS
 
-## Init the application
+## Init the application, usage: "make init API_PORT=<service-api-port> POSTGRES_PORT=<postgres-port>"
 ##
 ## Arguments:
-##   API_PORT     Requires port to run the service
+##   API_PORT     		Requires port to run the service
+##   POSTGRES_PORT     	Requires port to run the postgres
 init: envfile deps
 	@printf ">> "
 	export FORM3_SERVICE_HOST_PORT=${API_PORT}
+	@printf ">> "
+	export FORM3_POSTGRES_HOST_PORT=${POSTGRES_PORT}
 
 ## -- Misc --
 
@@ -80,9 +83,9 @@ env:
 	@echo "Job done, stopping make, please disregard following 'make: *** [env] Error 1'"
 	@exit 1
 
-## Generate .env file based on .env.template if not exists
+## Check/Generate .env file based on .env.template if not exists
 envfile:
-	@echo ">> initializing .env file"
+	@echo ">> checking/initializing .env file"
 	@test -s ./.env || (echo ">> copying .env.template to .env" && cp .env.template .env)
 
 ## -- Test --
@@ -96,7 +99,7 @@ test-unit:
 	@test -s $(GOPATH)/bin/overalls || GOBIN=$(GOPATH)/bin go get -u github.com/go-playground/overalls
 	@$(GOPATH)/bin/overalls -project=${IMPORT_PATH} -covermode=atomic -- -race
 
-## Run integration tests
+## Run integration tests, usage: make test-integration [TAGS=<tags-splitted-by-comma>] [FEATURE=<tags-splitted-by-comma>]
 ##
 ## Arguments:
 ##   TAGS     Optional tag(s) to run. Filter scenarios by tags:
@@ -107,8 +110,8 @@ test-unit:
 ##   FEATURE  Optional feature to run. Run only the specified feature.
 ##
 ## Examples:
-##   only scenarios: 'make test-integration TAGS=@dev'
-##   only one feature: 'make test-integration FEATURE=Dev'
+##   only scenarios: "make test-integration TAGS=@dev"
+##   only one feature: "make test-integration FEATURE=Dev"
 test-integration:
 	@echo ">> integration test"
 	@test -s $(GOPATH)/bin/overalls || GOBIN=$(GOPATH)/bin go get -u github.com/go-playground/overalls
@@ -125,12 +128,34 @@ docs:
 	@docker run --rm -w "/data/" -v `pwd`:/data mattjtodd/raml2html:7.2.0 raml2html  -i "resources/docs/raml/api.raml" -o "resources/docs/api.html"
 	@git add ${APP_PATH}/resources/docs/api.html
 
+## -- Database migrations --
+
+## Create database migration file, usage: "make create-migration NAME=<migration-name>"
+create-migration: migrate-cli
+	@echo ">> creating database migration file"
+	@${GOPATH}/bin/migrate create -ext=sql -dir=./resources/migrations/ "${NAME}" && echo ">> new migration created"
+	@git add ./resources/migrations
+
+## Apply migrations
+migrate: migrate-cli
+	@echo ">> running migrations"
+	@${GOPATH}/bin/migrate -source=file://./resources/migrations/ -database="${DATABASE_DSN}" up
+
+## Check/install migrations tool
+migrate-cli:
+	@echo ">> checking/installing migrations tool"
+	@test -s $(shell go env GOPATH)/bin/migrate || (echo ">> installing migrate cli" && go get -tags 'postgres' -u github.com/golang-migrate/migrate/cmd/migrate)
+
 ## -- Docker --
 
 ## Run command with docker-compose (before exec this command make sure `make init` was executed)
+##
+## Examples:
+##   run migration: "make docker migrate"
+##   run test: "make docker test"
 docker:
 	@echo ">> running with docker-compose"
-	@docker-compose run $(DOCKER_SERVICE_PORTS) --rm app make $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+	@docker-compose run $(DOCKER_SERVICE_PORTS) --rm api make $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 	@kill -3 $$PPID
 	@echo "Job done, stopping make, please disregard following 'make: *** [docker-tool] Error 1'"
 	@exit 1
@@ -139,12 +164,12 @@ docker:
 
 ## Start API service (before exec this command make sure `make init` was executed)
 servid-start:
-	@echo ">> starting API service in port ${FORM3_SERVICE_HOST_PORT}"
+	@echo ">> starting API service in port ${FORM3_SERVICE_HOST_PORT} and postgres in port ${FORM3_POSTGRES_HOST_PORT}"
 	@docker-compose up -d
 
 ## Stop API service
 servid-stop:
-	@echo ">> stop API service in port ${FORM3_SERVICE_HOST_PORT}"
+	@echo ">> stop API service in port ${FORM3_SERVICE_HOST_PORT} and postgres in port ${FORM3_POSTGRES_HOST_PORT}"
 	@docker-compose down -v
 
 ## Log API service
@@ -152,7 +177,7 @@ servid-api-log:
 	@echo ">> tailing api log"
 	@docker-compose logs api
 
-.PHONY: init build run run-compile-daemon lint fix-lint deps test test-unit test-integration docker servid-start servid-stop servid-api-log help
+.PHONY: init build run run-compile-daemon lint fix-lint deps test test-unit test-integration docker create-migration migrate migrate-cli servid-start servid-stop servid-api-log help
 
 .DEFAULT_GOAL := help
 HELP_SECTION_WIDTH="      "
