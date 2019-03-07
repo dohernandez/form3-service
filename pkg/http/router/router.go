@@ -22,6 +22,7 @@ func NewRouter(c *app.Container) chi.Router {
 	return r
 }
 
+// AddMiddleWares registers standard handlers middlewares
 func AddMiddleWares(r chi.Router, c *app.Container) {
 	r.Use(app.PanicRecoverer(c.PanicCatcher()))
 	r.Use(render.SetContentType(render.ContentTypeJSON))

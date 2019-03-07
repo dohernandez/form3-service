@@ -14,7 +14,7 @@ import (
 // PanicCatcher is a function to call when panic happens
 type PanicCatcher func(rw http.ResponseWriter, req *http.Request, recover interface{}, stack []byte)
 
-// Middleware recovers from panics and passes panic value to catchers
+// PanicRecoverer middleware recovers from panics and passes panic value to catchers
 func PanicRecoverer(panicCatcher []PanicCatcher) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {

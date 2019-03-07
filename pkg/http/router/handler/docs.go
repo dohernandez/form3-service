@@ -21,6 +21,7 @@ func NewDocsHandler(prefix, docsPath string) *DocsHandler {
 }
 
 func (h *DocsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// nolint:errcheck
 	workingDir, _ := os.Getwd()
 	filesDir := filepath.Join(workingDir, h.docsPath)
 	root := http.Dir(filesDir)
