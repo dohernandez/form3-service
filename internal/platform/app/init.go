@@ -49,6 +49,7 @@ func NewAppContainer(cfg Config) (*Container, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.WithDB(db)
 
 	// Create goengine postgres json SingleStreamManager
 	manager, err := postgres.NewSingleStreamManager(db.DB, goengine.NopLogger)
