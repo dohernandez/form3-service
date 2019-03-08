@@ -1,6 +1,6 @@
 # detecting GOPATH and removing trailing "/" if any
 GOPATH = $(realpath $(shell go env GOPATH))
-IMPORT_PATH = $(subst $(GOPATH)/src/,,$(PWD))
+IMPORT_PATH = $(subst $(GOPATH)/src/,,$(realpath $(shell pwd)))
 
 export SERVICE_NAME ?= $(subst github.com/dohernandez/,,$(IMPORT_PATH))
 

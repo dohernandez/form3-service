@@ -40,33 +40,29 @@ This project follows the following structure:
 |-- cmd # MUST be used as a main entrypoint, one folder for each binary
 	|-- servid # For simple application logic setup is done here
 		|-- servid.go
-	|-- consumer
-		|-- consumer.go
 |-- internal # contains application specific non-reusable by any other projects code 
 	|-- domain # domain packages
-		|-- payment
+		|-- transaction
 			|-- payment.go
 			|-- charges.go
-		|-- usecases.go
 	|-- platform # foundational packages specific to the project
+		|-- app # MUST contains base standard definitions to setup service.
+		|-- event
+			|-- store # contains event aggregate type
+				|-- payment.go
 		|-- http
 			|-- handlers # handler group by domain bundle
-				|-- payment
-					|-- post.go
-					|-- delete.go
-			|-- routes.go
-		|-- app # MUST contains base standard definitions to setup service.
+				|-- transaction
+				        |-- payment
+                            |-- decode.go # MUST contains decode request func
+                            |-- encode.go # MUST contains encode response func
+                            |-- post.go # MUST contains handler func
+			|-- routes.go  # MUST contains routes
 			|-- config.go # MUST contains the service configuration
 			|-- container.go # MUST contains service resources
 			|-- init.go # MUST initialize the service resources
 		|-- storage # MUST contains the abstraction of data (removing, updating, and selecting items from collection)
-		    |-- payment_finder.go
-		|-- validation # MUST contains input validations
-		    |-- form
-		        |-- input
-		            |-- id.go
-		        |-- payment
-		            |-- post.go		            
+		    |-- payment.go	            
 |-- pkg # MUST NOT import internal packages. Packages placed here should be considered as vendor.
 	|-- http
 		|-- rest
@@ -147,10 +143,11 @@ Routine operations are defined in `Makefile`.
 ```bash
 form3-service routine operations
 
-  init:                 Init the application
+  init:                 Init the application, usage: "make init API_PORT=<service-api-port> POSTGRES_PORT=<postgres-port>"
                        
                         Arguments:
-                          API_PORT     Requires port to run the service
+                          API_PORT              Requires port to run the service
+                          POSTGRES_PORT         Requires port to run the postgres
 
        -- Misc --
 
@@ -165,13 +162,13 @@ form3-service routine operations
        -- Environment modifiers --
 
   env:                  Run command with .env vars (before exec this command make sure `make init` was executed)
-  envfile:              Generate .env file based on .env.template if not exists
+  envfile:              Check/Generate .env file based on .env.template if not exists
 
        -- Test --
 
   test:                 Run tests
   test-unit:            Run unit tests
-  test-integration:     Run integration tests
+  test-integration:     Run integration tests, usage: make test-integration [TAGS=<tags-splitted-by-comma>] [FEATURE=<tags-splitted-by-comma>]
                        
                         Arguments:
                           TAGS     Optional tag(s) to run. Filter scenarios by tags:
@@ -182,21 +179,32 @@ form3-service routine operations
                           FEATURE  Optional feature to run. Run only the specified feature.
                        
                         Examples:
-                          only scenarios: 'make test-integration TAGS=@dev'
-                          only one feature: 'make test-integration FEATURE=Dev'
+                          only scenarios: "make test-integration TAGS=@dev"
+                          only one feature: "make test-integration FEATURE=Dev"
 
        -- Documentation --
 
   docs:                 Generate api documentation (raml)
 
+       -- Database migrations --
+
+  create-migration:     Create database migration file, usage: "make create-migration NAME=<migration-name>"
+  migrate:              Apply migrations
+  migrate-cli:          Check/install migrations tool
+
        -- Docker --
 
   docker:               Run command with docker-compose (before exec this command make sure `make init` was executed)
+                       
+                        Examples:
+                          run migration: "make docker migrate"
+                          run test: "make docker test"
 
        -- API service --
 
   servid-start:         Start API service (before exec this command make sure `make init` was executed)
   servid-stop:          Stop API service
+  servid-api-log:       Log API service
 
 Usage
   make <flags> [options]
@@ -238,17 +246,24 @@ Creating form3-service_api_1 ... done
 **Note** Wait a bit until the service is up and running, run `make servid-api-log` to check when the service is ready
 
 ```bash
-api_1  | >> running app with CompileDaemon
-api_1  | 2019/02/25 22:54:04 Running build command!
-api_1  | 2019/02/25 22:54:14 Build ok.
-api_1  | 2019/02/25 22:54:14 Restarting the given command.
-api_1  | 2019/02/25 22:54:14 stderr: {"level":"info","message":"Creating routers","timestamp":"2019-02-25T22:54:14Z"}
-api_1  | 2019/02/25 22:54:14 stderr: {"level":"debug","message":"added `/` route","timestamp":"2019-02-25T22:54:14Z"}
-api_1  | 2019/02/25 22:54:14 stderr: {"level":"debug","message":"added `/version` route","timestamp":"2019-02-25T22:54:14Z"}
-api_1  | 2019/02/25 22:54:14 stderr: {"level":"debug","message":"added `/status` route","timestamp":"2019-02-25T22:54:14Z"}
-api_1  | 2019/02/25 22:54:14 stderr: {"level":"debug","message":"added `/health` route","timestamp":"2019-02-25T22:54:14Z"}
-api_1  | 2019/02/25 22:54:14 stderr: {"level":"debug","message":"added `/docs` route","timestamp":"2019-02-25T22:54:14Z"}
-api_1  | 2019/02/25 22:54:14 stderr: {"level":"info","message":"Starting server at port http://0.0.0.0:8000","timestamp":"2019-02-25T22:54:14Z"}
+api_1       | >> checking/installing migrations tool
+api_1       | >> installing migrate cli
+api_1       | >> running migrations
+api_1       | 20190227153745/u create_table_events_transaction_stream (63.9807ms)
+api_1       | 20190303224329/u create_table_transaction_payment (102.8258ms)
+api_1       | 20190303234557/u create_table_transaction_projections (161.2766ms)
+api_1       | >> running app with CompileDaemon
+api_1       | 2019/03/08 01:13:52 Running build command!
+api_1       | 2019/03/08 01:14:02 Build ok.
+api_1       | 2019/03/08 01:14:02 Restarting the given command.
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"info","message":"Creating routers","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `/` route","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `/version` route","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `/status` route","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `/health` route","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `/docs` route","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `POST /v1/transaction/payments` route","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"info","message":"Starting server at port http://0.0.0.0:8000","timestamp":"2019-03-08T01:14:02Z"}
 ```
 
 To stop the service run
@@ -279,15 +294,27 @@ Welcome to form3-service. Please read API <a href="http://localhost:8008/docs/ap
 
 [[table of contents]](#table-of-contents)
 
-### Testing
+### Testing 
 
-In case you want to run the complete suite tests (unit test and behavioral test) run
+Before you can run the complete suite tests (unit test and behavioral test), make `.env` file is created and add `docker-compose` services to your `/etc/hosts`:
 
 ```
-make test
+127.0.0.1 postgres
+```                                                                                                                                               
+
+then you can run
+
+```
+make env test
 ```
 
 otherwise see routine operations defined in `Makefile` to run each suite independently.
+
+Another way to run the complete suite tests is using docker where there is no need to add any entry into your `/etc/hosts`:
+
+```
+make docker test
+```
 
 [[table of contents]](#table-of-contents)
 

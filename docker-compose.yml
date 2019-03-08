@@ -11,6 +11,8 @@ services:
     volumes:
       - .:/go/src/github.com/dohernandez/form3-service
       - /tmp/go-build:/root/.cache/go-build
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:11.2
