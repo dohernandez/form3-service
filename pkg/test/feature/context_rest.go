@@ -34,6 +34,7 @@ func RegisterRestContext(s *godog.Suite, baseURL string) *RestContext {
 	s.Step(`^I request REST endpoint with method "([^"]*)" and path "([^"]*)" and body$`,
 		c.iRequestWithMethodAndPathAndBody)
 	s.Step(`^I should have a bad request response$`, c.iShouldHaveABadRequestResponse)
+	s.Step(`^I should have a precondition failed response$`, c.iShouldHaveAPreconditionFailedRequestResponse)
 	s.Step(`^I should have a not found response$`, c.iShouldHaveANotFoundResponse)
 	s.Step(`^I should have an OK response$`, c.iShouldHaveAnOKResponse)
 	s.Step(`^I should have a no content response$`, c.iShouldHaveANoContentResponse)
@@ -88,6 +89,10 @@ func (c *RestContext) iShouldHaveResponseWithCode(statusCode int) error {
 
 func (c *RestContext) iShouldHaveABadRequestResponse() error {
 	return c.iShouldHaveResponseWithCode(http.StatusBadRequest)
+}
+
+func (c *RestContext) iShouldHaveAPreconditionFailedRequestResponse() error {
+	return c.iShouldHaveResponseWithCode(http.StatusPreconditionFailed)
 }
 
 func (c *RestContext) iShouldHaveANotFoundResponse() error {

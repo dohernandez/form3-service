@@ -7,4 +7,4 @@ RUN go get github.com/githubnemo/CompileDaemon \
 
 WORKDIR /go/src/github.com/dohernandez/form3-service
 
-CMD make run-compile-daemon
+CMD make migrate run-compile-daemon

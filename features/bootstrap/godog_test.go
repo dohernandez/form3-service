@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/godog"
+	"github.com/dohernandez/form3-service/features/bootstrap/internal"
 	"github.com/dohernandez/form3-service/internal/platform/app"
 	"github.com/dohernandez/form3-service/internal/platform/http"
 	"github.com/dohernandez/form3-service/pkg/http/server"
@@ -38,6 +39,9 @@ func TestIntegration(t *testing.T) {
 	baseURL := <-srv.AddrAssigned
 
 	feature.RunSuite("..", func(_ *testing.T, s *godog.Suite) {
-		feature.RegisterRestContext(s, baseURL)
+		rest := feature.RegisterRestContext(s, baseURL)
+		internal.RegisterRestContext(s, rest)
+
+		internal.RegisterDBContext(s, c.DB())
 	}, t)
 }
