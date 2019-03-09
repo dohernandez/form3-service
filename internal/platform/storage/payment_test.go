@@ -3,6 +3,7 @@ package storage_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -37,7 +38,7 @@ func TestCreate(t *testing.T) {
 		err error
 	}{
 		{
-			scenario: "Create payment successfully",
+			scenario: "Create payment successful",
 			assert: func(
 				mock sqlmock.Sqlmock,
 				ID aggregate.ID,
@@ -60,7 +61,7 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		{
-			scenario: "Failure create payment",
+			scenario: "Create payment unsuccessful",
 			assert: func(
 				mock sqlmock.Sqlmock,
 				ID aggregate.ID,
@@ -100,6 +101,111 @@ func TestCreate(t *testing.T) {
 				version,
 				organisationID,
 				attributes,
+			)
+
+			if tc.err != nil {
+				assert.EqualError(t, err, tc.err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+
+			err = dbMock.Sqlmock.ExpectationsWereMet()
+			assert.NoErrorf(t, err, "there were unfulfilled expectations: %s", err)
+		})
+	}
+}
+
+func TestUpdateBeneficiary(t *testing.T) {
+	aggregateID := aggregate.GenerateID()
+	beneficiary := transaction.NewBankAccountMock()
+	table := "table"
+
+	testCases := []struct {
+		scenario string
+
+		assert func(
+			mock sqlmock.Sqlmock,
+			ID aggregate.ID,
+			beneficiary transaction.BankAccount,
+			table string,
+		)
+
+		err error
+	}{
+		{
+			scenario: "Update beneficiary payment successful",
+			assert: func(
+				mock sqlmock.Sqlmock,
+				ID aggregate.ID,
+				beneficiary transaction.BankAccount,
+				table string,
+			) {
+				jsBeneficiary, err := json.Marshal(beneficiary)
+				if err != nil {
+					return
+				}
+
+				mock.ExpectBegin()
+
+				// #nosec G201
+				mock.ExpectExec(fmt.Sprintf(
+					`^UPDATE %[1]s `+
+						`SET attributes = attributes::jsonb \|\| '{"beneficiary_party": %[2]s}'::jsonb `+
+						`WHERE id = \$1$`,
+					table,
+					jsBeneficiary,
+				)).WithArgs(
+					ID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectCommit()
+			},
+		},
+		{
+			scenario: "Update beneficiary payment unsuccessful",
+			assert: func(
+				mock sqlmock.Sqlmock,
+				ID aggregate.ID,
+				beneficiary transaction.BankAccount,
+				table string,
+			) {
+				jsBeneficiary, err := json.Marshal(beneficiary)
+				if err != nil {
+					return
+				}
+
+				mock.ExpectBegin()
+
+				// #nosec G201
+				mock.ExpectExec(fmt.Sprintf(
+					`^UPDATE %[1]s `+
+						`SET attributes = attributes::jsonb \|\| '{"beneficiary_party": %[2]s}'::jsonb `+
+						`WHERE id = \$1$`,
+					table,
+					jsBeneficiary,
+				)).WithArgs(
+					ID,
+				).WillReturnError(sql.ErrTxDone)
+
+				mock.ExpectRollback()
+			},
+			err: sql.ErrTxDone,
+		},
+	}
+
+	dbMock := mocked.NewDBMock(t)
+	defer dbMock.Close()
+
+	paymentBeneficiaryUpdater := storage.NewPaymentStorage(dbMock.SqlxDB, table)
+	for _, tc := range testCases {
+		tc := tc // Pinning ranged variable, more info: https://github.com/kyoh86/scopelint
+		t.Run(tc.scenario, func(t *testing.T) {
+			tc.assert(dbMock.Sqlmock, aggregateID, beneficiary, table)
+
+			err := paymentBeneficiaryUpdater.UpdateBeneficiary(
+				context.TODO(),
+				aggregateID,
+				beneficiary,
 			)
 
 			if tc.err != nil {

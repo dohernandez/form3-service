@@ -180,7 +180,13 @@ func (c *DBContext) RunStoreData(table string, data *gherkin.DataTable, value fu
 		var args []interface{}
 
 		for k, cell := range row.Cells {
-			args = append(args, value(data.Rows[0].Cells[k].Value, cell.Value))
+			if value != nil {
+				args = append(args, value(data.Rows[0].Cells[k].Value, cell.Value))
+
+				continue
+			}
+
+			args = append(args, cell.Value)
 		}
 
 		_, err := c.DB.Exec(query, args...)

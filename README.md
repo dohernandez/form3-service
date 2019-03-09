@@ -51,7 +51,7 @@ This project follows the following structure:
 			|-- store # contains event aggregate type
 				|-- payment.go
 		|-- http
-			|-- handlers # handler group by domain bundle
+			|-- handlers # http handler grouped by domain bundle
 				|-- transaction
 				        |-- payment
                             |-- decode.go # MUST contains decode request func
@@ -61,6 +61,10 @@ This project follows the following structure:
 			|-- config.go # MUST contains the service configuration
 			|-- container.go # MUST contains service resources
 			|-- init.go # MUST initialize the service resources
+		|-- projection
+			|-- handler # projection handler grouped by projection
+				|-- message
+				        |-- payment.go
 		|-- storage # MUST contains the abstraction of data (removing, updating, and selecting items from collection)
 		    |-- payment.go	            
 |-- pkg # MUST NOT import internal packages. Packages placed here should be considered as vendor.

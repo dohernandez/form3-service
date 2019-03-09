@@ -1,9 +1,8 @@
 package internal
 
 import (
-	"time"
-
 	"regexp"
+	"time"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"

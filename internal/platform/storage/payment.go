@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/dohernandez/form3-service/internal/domain/transaction"
@@ -29,7 +30,7 @@ func NewPaymentStorage(db *sqlx.DB, table string) *PaymentStorage {
 
 var _ message.PaymentCreator = new(PaymentStorage)
 
-//Create defines the way to persist a payment in the projection
+// Create defines the way to persist a payment in the projection
 func (s *PaymentStorage) Create(
 	ctx context.Context,
 	id aggregate.ID,
@@ -54,6 +55,39 @@ func (s *PaymentStorage) Create(
 
 	return execInTransaction(s.db, func(tx *sqlx.Tx) error {
 		_, err := tx.ExecContext(ctx, query, id, version, organisationID, attributes)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+var _ message.PaymentBeneficiaryUpdater = new(PaymentStorage)
+
+// UpdateBeneficiary defines the way to update a payment's beneficiary in the projection
+func (s *PaymentStorage) UpdateBeneficiary(ctx context.Context, id aggregate.ID, beneficiary transaction.BankAccount) error {
+	logger := log.FromContext(ctx)
+
+	jsBeneficiary, err := json.Marshal(beneficiary)
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE %[1]s 
+			  SET attributes = attributes::jsonb || '{"beneficiary_party": %[2]s}'::jsonb
+			  WHERE id = $1`
+
+	query = fmt.Sprintf(query, s.table, string(jsBeneficiary))
+
+	if logger != nil {
+		logger.Debugf("exec in transaction sql %s, values %+v", query, []interface{}{
+			id,
+		})
+	}
+
+	return execInTransaction(s.db, func(tx *sqlx.Tx) error {
+		_, err := tx.ExecContext(ctx, query, id)
 		if err != nil {
 			return err
 		}

@@ -258,8 +258,12 @@ func (p *Payment) AggregateID() aggregate.ID {
 
 // Apply changes to the Payment
 func (p *Payment) Apply(event *aggregate.Changed) {
-	if event, ok := event.Payload().(PaymentCreated۰v0); ok {
+	switch event := event.Payload().(type) {
+	case PaymentCreated۰v0:
 		p.applyPaymentCreated۰v0(event)
+
+	case PaymentBeneficiaryUpdated۰v0:
+		p.applyPaymentBeneficiaryUpdated۰v0(event)
 	}
 }
 
@@ -269,6 +273,15 @@ func (p *Payment) applyPaymentCreated۰v0(paymentCreated PaymentCreated۰v0) {
 	p.Version = Version0
 	p.OrganisationID = paymentCreated.OrganisationID
 	p.Attributes = paymentCreated.Attributes
+}
+
+// applyPaymentBeneficiaryUpdated۰v0 applies the update of the beneficiary of the payment in its version 0
+func (p *Payment) applyPaymentBeneficiaryUpdated۰v0(paymentBeneficiaryUpdated PaymentBeneficiaryUpdated۰v0) {
+	if attrs, ok := p.Attributes.(Payment۰v0); ok {
+		attrs.BeneficiaryParty = paymentBeneficiaryUpdated.Beneficiary
+
+		p.Attributes = attrs
+	}
 }
 
 // PaymentCreated۰v0 a DomainEvent indicating that payment was created in its version 0
@@ -299,4 +312,22 @@ func CreatePayment۰v0(
 	}
 
 	return &payment, nil
+}
+
+// PaymentBeneficiaryUpdated۰v0 a DomainEvent indicating that beneficiary of the payment was updated in its version 0
+type PaymentBeneficiaryUpdated۰v0 struct {
+	ID          aggregate.ID `json:"id"`
+	Beneficiary BankAccount  `json:"beneficiary"`
+}
+
+// UpdatePaymentBeneficiary۰v0 update the beneficiary of `Payment` in its version 0
+func (p *Payment) UpdatePaymentBeneficiary۰v0(
+	_ context.Context,
+	beneficiary BankAccount,
+) error {
+	paymentBeneficiaryUpdated := PaymentBeneficiaryUpdated۰v0{}
+	paymentBeneficiaryUpdated.ID = p.ID
+	paymentBeneficiaryUpdated.Beneficiary = beneficiary
+
+	return aggregate.RecordChange(p, paymentBeneficiaryUpdated)
 }
