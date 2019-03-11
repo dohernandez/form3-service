@@ -15,6 +15,7 @@ The service persist each payment's state, so that we can have a history of all t
     - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
     - [Known issues](#known-issues)
+- [Resources](resources)
     
 ## Getting started
 
@@ -362,5 +363,14 @@ This is the most simple way to quick start testing your app after cloning a repo
 ### Known issues
 
 There are no known issues.
+
+[[table of contents]](#table-of-contents)
+
+## Resources
+
+#### How to set up postman client
+
+1. Install [Postman](https://www.getpostman.com/products)
+2. Import the postman collection file [resources/postman/FORM3.postman_collection.json](resources/postman/FORM3.postman_collection.json) using the option `Import > Import From Link` 
 
 [[table of contents]](#table-of-contents)
