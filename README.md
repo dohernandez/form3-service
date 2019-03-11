@@ -1,11 +1,14 @@
 # Form3 Service
 
-The form3-service is a service responsible to manage payment resources
+The form3-service (The service) is a service responsible to manage payment resources. It allows to create, delete payments; to update payment's beneficiary and to retrieve a single payment or a list of payment.
+
+The service persist each payment's state, so that we can have a history of all the changes made to a payment.   
 
 ## Table of Contents
 
 - [Getting started](#getting-started)
     - [Prerequisites](#prerequisites)
+    - [Getting the source](#getting-the-source)
     - [Development](#development)
         - [Application run](#application-run)
         - [Generate documentation](#generate-documentation)
@@ -31,6 +34,14 @@ $ which docker
 There is no other prerequisite needed in order to setup this project for development.
 
 [[table of contents]](#table-of-contents)
+
+### Getting the source
+
+Setup the project structure and fetch the repo like so:
+ 
+```bash
+go get github.com/dohernandez/form3-service
+```
 
 ### Development
 
@@ -89,6 +100,7 @@ This project follows the following structure:
 **Package Design**
 
 `cmd/`
+    
     * Packages that provide support for a specific program that is being built.
     * Can only import package from `internal/platform` and `pgk`.
     * Can't import package from `internal/domain`.
@@ -99,7 +111,8 @@ This project follows the following structure:
     * Only if system can be returned to 100% integrity.
     
 `pkg`
-    # Can't import import `internal` packages. 
+    
+    * Can't import import `internal` packages. 
     * Packages placed here should be considered as vendor.
     * Stick to the testing package in go.
     * NOT allowed to panic an application.
@@ -114,6 +127,7 @@ This project follows the following structure:
     * Focus more on unit than integration testing.
     
 `internal\domain`
+    
     * NOT allowed to panic an application.
     * Allowed to wrap errors when domain concern.
     * Wrap errors with context if not being handled.
@@ -128,6 +142,7 @@ This project follows the following structure:
     * Can't import `internal\platform` package
 
 `internal\platform`
+    
     * NOT allowed to panic an application.
     * NOT allowed to set policy about any application concerns.
     * NOT allowed to log, but access to trace information must be decoupled.
@@ -140,7 +155,7 @@ This project follows the following structure:
     * Packages can import each other.
     * Can import `internal\domain` package
     
-This structure design is mostly inspired by [Package Oriented Design]((https://www.ardanlabs.com/blog/2017/02/package-oriented-design.html)) by William Kennedy.
+This structure design is mostly inspired by [Package Oriented Design](https://www.ardanlabs.com/blog/2017/02/package-oriented-design.html) by William Kennedy.
 
 Routine operations are defined in `Makefile`.
 
@@ -148,10 +163,15 @@ Routine operations are defined in `Makefile`.
 form3-service routine operations
 
   init:                 Init the application, usage: "make init API_PORT=<service-api-port> POSTGRES_PORT=<postgres-port>"
+                                               
+                        Requirement:
+                          export FORM3_SERVICE_HOST_PORT=<service-api-port>
+                          export FORM3_POSTGRES_HOST_PORT=<postgres-port>
                        
                         Arguments:
                           API_PORT              Requires port to run the service
                           POSTGRES_PORT         Requires port to run the postgres
+
 
        -- Misc --
 
@@ -221,30 +241,34 @@ Usage
 The first thing you need to do is, init the application, create the `.env` file with the server configuration and set up the environment variable `FORM3_SERVICE_HOST_PORT`. To do so, run the command
 
 ```bash
-make init API_PORT=8008
+make init API_PORT=8008 POSTGRES_PORT=5434
 ```
 
 ```bash
 >> initializing .env file
 >> ensuring dependencies
->> export FORM3_SERVICE_HOST_PORT=8008
+>> run those commands to set the value to the variables env
+export FORM3_SERVICE_HOST_PORT=8008
+export FORM3_POSTGRES_HOST_PORT=5434
 
 ```
 
-It will create the `.env` file for you based on `.env.template` file and will set the environment variable `FORM3_SERVICE_HOST_PORT`.
+It will create the `.env` file for you based on `.env.template` file and print how to set the environment variable require in your environment.
 
-After init the application you are able to start/stop the service at any time. 
+After init the application and export the environment variables, you are able to start/stop the service at any time. 
 
 ```bash
 make servid-start
 ```
 
 ```bash
->> starting API service in port 8008
+>> starting API service in port 8008 and postgres in port 5434
 Creating network "form3-service_default" with the default driver
 ...
 WARNING: Image for service api was built because it did not already exist. To rebuild this image you must use `docker-compose build` or `docker-compose up --build`.
-Creating form3-service_api_1 ... done
+Creating form3-service_postgres_1 ... done
+Creating form3-service_api_1      ... done
+
 ```
 
 **Note** Wait a bit until the service is up and running, run `make servid-api-log` to check when the service is ready
@@ -281,9 +305,11 @@ make servid-stop
 ```
 
 ```bash
->> stop API service in port 8008
+>> stop API service in port 8008 and postgres in port 5434
 Stopping form3-service_api_1 ... done
+Stopping fform3-service_postgres_1 ... done
 Removing form3-service_api_1 ... done
+Removing form3-service_postgres_1 ... done
 Removing network form3-service_default
 ```
 
@@ -291,9 +317,11 @@ Removing network form3-service_default
 
 #### Generate documentation
 
-Documentation items are generated from raml (`resources/raml/api.raml`) definition, updated with `make docs`.
+Documentation items are generated using raml generator. RAML file is located `resources/raml/api.raml`. 
 
-To see the api documentation generated, you either can access to the root of the service [http://localhost:8008](http://localhost:8008), it will show the link to the api documentation.
+To update api documentation, run `make docs`.
+
+To see the api documentation generated, you can access to the root of the service [http://localhost:8008](http://localhost:8008), it will show the link to the api documentation.
 
 ```html
 Welcome to form3-service. Please read API <a href="http://localhost:8008/docs/api.html">documentation</a>.
@@ -304,7 +332,7 @@ Welcome to form3-service. Please read API <a href="http://localhost:8008/docs/ap
 
 ### Testing 
 
-Before you can run the complete suite tests (unit test and behavioral test), make `.env` file is created and add `docker-compose` services to your `/etc/hosts`:
+Before you can run the complete suite tests (unit test and behavioral test), make sure `.env` file is created and  `docker-compose` services to your `/etc/hosts`:
 
 ```
 127.0.0.1 postgres
@@ -318,11 +346,14 @@ make env test
 
 otherwise see routine operations defined in `Makefile` to run each suite independently.
 
+
 Another way to run the complete suite tests is using docker where there is no need to add any entry into your `/etc/hosts`:
 
 ```
 make docker test
 ```
+
+This is the most simple way to quick start testing your app after cloning a repo, though it has low performance and is harder to debug.
 
 [[table of contents]](#table-of-contents)
 

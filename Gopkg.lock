@@ -370,6 +370,7 @@
     "github.com/hellofresh/goengine/aggregate",
     "github.com/hellofresh/goengine/driver/sql",
     "github.com/hellofresh/goengine/extension/pq",
+    "github.com/hellofresh/goengine/metadata",
     "github.com/hellofresh/goengine/strategy/json",
     "github.com/hellofresh/goengine/strategy/json/sql/postgres",
     "github.com/hellofresh/health-go",
