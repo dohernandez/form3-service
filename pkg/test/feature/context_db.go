@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -126,9 +127,11 @@ func (c *DBContext) buildSelectIDWhereQuery(selectCol, table string, columns []s
 	return query, args, nil
 }
 
-// RunNoExistData check data deos not exist thro select from db table the values from the DataTable.
+// RunNoExistData check data does not exist thro select from db table the values from the DataTable.
 // The DataTable could expand dynamically as many column contain the table, resulting in some cases a DataTable
 // with 3 columns or 5 columns depends on the background data require
+//
+// Returns (false, error) if data exists, otherwise return (true, nil)
 func (c *DBContext) RunNoExistData(selectCol, table string, data *gherkin.DataTable, valueWhereBuilder ValueWhereBuilder, skipColumnsFromCondition []string) (ok bool, err error) {
 	columns, err := c.columns(data)
 	if err != nil {
@@ -144,12 +147,16 @@ func (c *DBContext) RunNoExistData(selectCol, table string, data *gherkin.DataTa
 		}
 
 		err = c.DB.Get(&id, query, args...)
-		if err == nil {
-			return false, errors.Wrapf(err, "query [%s] with args [%+v]", query, args)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return false, errors.Wrapf(err, "query [%s] with args [%+v]", query, args)
+			}
+
+			return true, nil
 		}
 	}
 
-	return true, nil
+	return false, errors.Errorf("data exists")
 }
 
 // RunStoreData inserts into the db table the values from the DataTable.

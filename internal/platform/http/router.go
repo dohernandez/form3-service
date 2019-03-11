@@ -16,13 +16,17 @@ func NewRouter(c *app.Container) chi.Router {
 
 	logger := c.Logger()
 
-	paymentURI := "/v1/transaction/payments"
-	r.Method(http.MethodPost, paymentURI, payment.NewPostHandler۰v0(c))
-	logger.Debugf("added `%s %s` route", http.MethodPost, paymentURI)
+	paymentCreateURI := "/v1/transaction/payments"
+	r.Method(http.MethodPost, paymentCreateURI, payment.NewPostHandler۰v0(c))
+	logger.Debugf("added `%s %s` route", http.MethodPost, paymentCreateURI)
 
 	paymentBeneficiaryURI := "/v1/transaction/payments/{id}/beneficiary"
 	r.Method(http.MethodPatch, paymentBeneficiaryURI, beneficiary.NewPatchHandler۰v0(c))
 	logger.Debugf("added `%s %s` route", http.MethodPatch, paymentBeneficiaryURI)
+
+	paymentDeleteURI := "/v1/transaction/payments/{id}"
+	r.Method(http.MethodDelete, paymentDeleteURI, payment.NewDeleteHandler(c))
+	logger.Debugf("added `%s %s` route", http.MethodDelete, paymentDeleteURI)
 
 	return r
 }

@@ -16,12 +16,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	table = "table"
+)
+
 func TestCreate(t *testing.T) {
 	aggregateID := aggregate.GenerateID()
 	version := transaction.Version0
 	organisationID := transaction.OrganisationID(uuid.New().String())
 	attributes := transaction.NewPayment۰v0Mock()
-	table := "table"
 
 	testCases := []struct {
 		scenario string
@@ -118,7 +121,6 @@ func TestCreate(t *testing.T) {
 func TestUpdateBeneficiary(t *testing.T) {
 	aggregateID := aggregate.GenerateID()
 	beneficiary := transaction.NewBankAccountMock()
-	table := "table"
 
 	testCases := []struct {
 		scenario string
@@ -206,6 +208,89 @@ func TestUpdateBeneficiary(t *testing.T) {
 				context.TODO(),
 				aggregateID,
 				beneficiary,
+			)
+
+			if tc.err != nil {
+				assert.EqualError(t, err, tc.err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+
+			err = dbMock.Sqlmock.ExpectationsWereMet()
+			assert.NoErrorf(t, err, "there were unfulfilled expectations: %s", err)
+		})
+	}
+}
+
+func TestDelete(t *testing.T) {
+	aggregateID := aggregate.GenerateID()
+
+	testCases := []struct {
+		scenario string
+
+		assert func(
+			mock sqlmock.Sqlmock,
+			ID aggregate.ID,
+			table string,
+		)
+
+		err error
+	}{
+		{
+			scenario: "Delete payment successful",
+			assert: func(
+				mock sqlmock.Sqlmock,
+				ID aggregate.ID,
+				table string,
+			) {
+				mock.ExpectBegin()
+
+				// #nosec G201
+				mock.ExpectExec(fmt.Sprintf(
+					`^DELETE FROM %[1]s WHERE id = \$1$`,
+					table,
+				)).WithArgs(
+					ID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectCommit()
+			},
+		},
+		{
+			scenario: "Delete payment unsuccessful",
+			assert: func(
+				mock sqlmock.Sqlmock,
+				ID aggregate.ID,
+				table string,
+			) {
+				mock.ExpectBegin()
+
+				// #nosec G201
+				mock.ExpectExec(fmt.Sprintf(
+					`^DELETE FROM %[1]s WHERE id = \$1$`,
+					table,
+				)).WithArgs(
+					ID,
+				).WillReturnError(sql.ErrTxDone)
+
+				mock.ExpectRollback()
+			},
+			err: sql.ErrTxDone,
+		},
+	}
+
+	dbMock := mocked.NewDBMock(t)
+	defer dbMock.Close()
+
+	paymentDeleter := storage.NewPaymentStorage(dbMock.SqlxDB, table)
+	for _, tc := range testCases {
+		tc := tc // Pinning ranged variable, more info: https://github.com/kyoh86/scopelint
+		t.Run(tc.scenario, func(t *testing.T) {
+			tc.assert(dbMock.Sqlmock, aggregateID, table)
+
+			err := paymentDeleter.Delete(
+				context.TODO(),
+				aggregateID,
 			)
 
 			if tc.err != nil {

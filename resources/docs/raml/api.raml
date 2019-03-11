@@ -403,6 +403,17 @@ types:
                         "error": "account_name: cannot be blank."
                       }
 
+              '404':
+                description: Not Found
+                body:
+                  application/json:
+                    type: ErrorResponse
+                    example: |
+                      {
+                        "status": "Not Found",
+                        "error": "not found: goengine: unsupported empty event stream"
+                      }
+
               '500':
                 description: Internal Server Error
                 body:
@@ -413,3 +424,42 @@ types:
                         "status": "Internal Server Error",
                         "error": "goengine: unsupported empty event stream"
                       }
+
+        delete:
+          description: Delete the given payment
+          responses:
+            '204':
+              description: OK
+
+            '412':
+              description: Precondition Failed
+              body:
+                application/json:
+                  type: ErrorResponse
+                  example: |
+                    {
+                      "status": "Precondition Failed",
+                      "error": "account_name: cannot be blank."
+                    }
+
+            '404':
+              description: Not Found
+              body:
+                application/json:
+                  type: ErrorResponse
+                  example: |
+                    {
+                      "status": "Not Found",
+                      "error": "not found: goengine: unsupported empty event stream"
+                    }
+
+            '500':
+              description: Internal Server Error
+              body:
+                application/json:
+                  type: ErrorResponse
+                  example: |
+                    {
+                      "status": "Internal Server Error",
+                      "error": "goengine: unsupported empty event stream"
+                    }

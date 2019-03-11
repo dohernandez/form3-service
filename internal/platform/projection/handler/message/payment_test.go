@@ -11,7 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTransactionPaymentCreatedHandler۰v0(t *testing.T) {
+const wrongPayload = "wrong payload"
+
+func TestPaymentCreatedHandler۰v0(t *testing.T) {
 	paymentCreated۰v0 := transaction.NewPaymentCreated۰v0Mock()
 
 	testCases := []struct {
@@ -57,7 +59,7 @@ func TestTransactionPaymentCreatedHandler۰v0(t *testing.T) {
 				panic("should not be called")
 			},
 			payloadFunc: func() interface{} {
-				return "wrong payload"
+				return wrongPayload
 			},
 			err: errors.New("wrong message version"),
 		},
@@ -88,7 +90,7 @@ func TestTransactionPaymentCreatedHandler۰v0(t *testing.T) {
 		tc := tc // Pinning ranged variable, more info: https://github.com/kyoh86/scopelint
 		t.Run(tc.scenario, func(t *testing.T) {
 			creator := message.NewCallbackPaymentCreatorMock(tc.createFunc)
-			handler := message.TransactionPaymentCreatedHandler۰v0(creator)
+			handler := message.PaymentCreatedHandler۰v0(creator)
 
 			message := message.NewMessageMock(tc.payloadFunc)
 
@@ -102,7 +104,7 @@ func TestTransactionPaymentCreatedHandler۰v0(t *testing.T) {
 	}
 }
 
-func TestTransactionPaymentBeneficiaryUpdatedHandler۰v0(t *testing.T) {
+func TestPaymentBeneficiaryUpdatedHandler۰v0(t *testing.T) {
 	paymentBeneficiaryUpdated۰v0 := transaction.NewPaymentBeneficiaryUpdated۰v0Mock()
 
 	testCases := []struct {
@@ -131,7 +133,7 @@ func TestTransactionPaymentBeneficiaryUpdatedHandler۰v0(t *testing.T) {
 				panic("should not be called")
 			},
 			payloadFunc: func() interface{} {
-				return "wrong payload"
+				return wrongPayload
 			},
 			err: errors.New("wrong message version"),
 		},
@@ -154,7 +156,71 @@ func TestTransactionPaymentBeneficiaryUpdatedHandler۰v0(t *testing.T) {
 		tc := tc // Pinning ranged variable, more info: https://github.com/kyoh86/scopelint
 		t.Run(tc.scenario, func(t *testing.T) {
 			updater := message.NewCallbackPaymentBeneficiaryUpdaterMock(tc.beneficiaryUpdaterFunc)
-			handler := message.TransactionPaymentBeneficiaryUpdatedHandler۰v0(updater)
+			handler := message.PaymentBeneficiaryUpdatedHandler۰v0(updater)
+
+			message := message.NewMessageMock(tc.payloadFunc)
+
+			_, err := handler(context.TODO(), true, message)
+			if tc.err != nil {
+				assert.EqualError(t, err, tc.err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestPaymentDeletedHandler(t *testing.T) {
+	paymentDeleted := transaction.NewPaymentDeletedMock()
+
+	testCases := []struct {
+		scenario string
+
+		deleterFunc func(ID aggregate.ID) error
+		payloadFunc func() interface{}
+
+		err error
+	}{
+		{
+			scenario: "Delete the payment projection successful",
+			deleterFunc: func(ID aggregate.ID) error {
+				assert.Equal(t, paymentDeleted.ID, ID)
+
+				return nil
+			},
+			payloadFunc: func() interface{} {
+				return paymentDeleted
+			},
+		},
+		{
+			scenario: "Delete the payment projection unsuccessful, wrong payload",
+			deleterFunc: func(ID aggregate.ID) error {
+				panic("should not be called")
+			},
+			payloadFunc: func() interface{} {
+				return wrongPayload
+			},
+			err: errors.New("wrong message version"),
+		},
+		{
+			scenario: "Delete the payment projection unsuccessful, delete error",
+			deleterFunc: func(ID aggregate.ID) error {
+				assert.Equal(t, paymentDeleted.ID, ID)
+
+				return errors.New("delete error")
+			},
+			payloadFunc: func() interface{} {
+				return paymentDeleted
+			},
+			err: errors.New("delete error"),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc // Pinning ranged variable, more info: https://github.com/kyoh86/scopelint
+		t.Run(tc.scenario, func(t *testing.T) {
+			deleter := message.NewCallbackPaymentDeleterMock(tc.deleterFunc)
+			handler := message.PaymentDeletedHandler(deleter)
 
 			message := message.NewMessageMock(tc.payloadFunc)
 

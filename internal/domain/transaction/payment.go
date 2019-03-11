@@ -240,6 +240,8 @@ type (
 		Version        Version        `json:"version" db:"version"`
 		OrganisationID OrganisationID `json:"organisation_id" db:"organisation_id"`
 		Attributes     interface{}    `json:"attributes" db:"attributes"`
+
+		Deleted bool
 	}
 
 	// OrganisationID represents an UUID
@@ -264,6 +266,9 @@ func (p *Payment) Apply(event *aggregate.Changed) {
 
 	case PaymentBeneficiaryUpdated۰v0:
 		p.applyPaymentBeneficiaryUpdated۰v0(event)
+
+	case PaymentDeleted:
+		p.applyPaymentDeleted(event)
 	}
 }
 
@@ -282,6 +287,11 @@ func (p *Payment) applyPaymentBeneficiaryUpdated۰v0(paymentBeneficiaryUpdated P
 
 		p.Attributes = attrs
 	}
+}
+
+// applyPaymentDeleted applies the delete payment
+func (p *Payment) applyPaymentDeleted(_ PaymentDeleted) {
+	p.Deleted = true
 }
 
 // PaymentCreated۰v0 a DomainEvent indicating that payment was created in its version 0
@@ -330,4 +340,20 @@ func (p *Payment) UpdatePaymentBeneficiary۰v0(
 	paymentBeneficiaryUpdated.Beneficiary = beneficiary
 
 	return aggregate.RecordChange(p, paymentBeneficiaryUpdated)
+}
+
+// PaymentDeleted a DomainEvent indicating that the payment was deleted
+type PaymentDeleted struct {
+	ID          aggregate.ID `json:"id"`
+	Beneficiary BankAccount  `json:"beneficiary"`
+}
+
+// DeletePayment deletes the `Payment`
+func (p *Payment) DeletePayment(
+	_ context.Context,
+) error {
+	paymentDeleted := PaymentDeleted{}
+	paymentDeleted.ID = p.ID
+
+	return aggregate.RecordChange(p, paymentDeleted)
 }

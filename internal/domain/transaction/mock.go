@@ -146,3 +146,13 @@ func NewPaymentBeneficiaryUpdated۰v0Mock() PaymentBeneficiaryUpdated۰v0 {
 		Beneficiary: beneficiary,
 	}
 }
+
+// NewPaymentDeletedMock creates a PaymentDeleted mock for tests
+// nolint:unused
+func NewPaymentDeletedMock() PaymentDeleted {
+	aggregateID := aggregate.GenerateID()
+
+	return PaymentDeleted{
+		ID: aggregateID,
+	}
+}

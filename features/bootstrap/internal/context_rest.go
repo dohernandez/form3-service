@@ -28,7 +28,7 @@ func RegisterRestContext(s *godog.Suite, upstream *feature.RestContext) *RestCon
 			return
 		}
 
-		re := regexp.MustCompile(`^I request REST endpoint with method "([^"]*)" and path "([^"]*)" and body$`)
+		re := regexp.MustCompile(`^I request REST endpoint with method "([^"]*)" and path "([^"]*)".*$`)
 		if re.Match([]byte(step.Text)) {
 			time.Sleep(1 * time.Second)
 		}
