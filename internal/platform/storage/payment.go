@@ -2,10 +2,13 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
+	"github.com/dohernandez/form3-service/internal/domain"
 	"github.com/dohernandez/form3-service/internal/domain/transaction"
+	"github.com/dohernandez/form3-service/internal/platform/http/handler/transaction/payment"
 	"github.com/dohernandez/form3-service/internal/platform/projection/handler/message"
 	"github.com/dohernandez/form3-service/pkg/log"
 	"github.com/hellofresh/goengine/aggregate"
@@ -117,4 +120,48 @@ func (s *PaymentStorage) Delete(ctx context.Context, id aggregate.ID) error {
 
 		return nil
 	})
+}
+
+var _ payment.FindByID۰v0 = new(PaymentStorage)
+
+// Find defines the way to get the payment from the projection
+func (s *PaymentStorage) Find(ctx context.Context, id aggregate.ID) (*transaction.Payment, error) {
+	logger := log.FromContext(ctx)
+
+	query := `SELECT * FROM %[1]s WHERE id = $1`
+	query = fmt.Sprintf(query, s.table)
+
+	if logger != nil {
+		logger.Debugf("exec in transaction sql %s, values %+v", query, []interface{}{
+			id,
+		})
+	}
+
+	var payment transaction.Payment
+
+	err := execInTransaction(s.db, func(tx *sqlx.Tx) error {
+		err := tx.GetContext(ctx, &payment, query, id)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return domain.ErrNotFound
+			}
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var attrPayment۰v0 transaction.Payment۰v0
+
+	err = json.Unmarshal(payment.Attributes.([]uint8), &attrPayment۰v0)
+	if err != nil {
+		return nil, err
+	}
+
+	payment.Attributes = attrPayment۰v0
+
+	return &payment, nil
 }
