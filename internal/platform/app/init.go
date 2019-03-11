@@ -21,7 +21,6 @@ import (
 	"github.com/hellofresh/goengine/strategy/json/sql/postgres"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // enable postgres driver
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -70,7 +69,10 @@ func NewAppContainer(cfg Config) (*Container, error) {
 	eventStore := event.NewStore(paymentRepo)
 	c.WithPaymentEventStore(eventStore)
 
-	if err := listenPaymentProjection(db, manager, streamName, cfg, c.Logger()); err != nil {
+	paymentStorage := storage.NewPaymentStorage(db, transactionPaymentTable)
+	c.WithPaymentStorage(paymentStorage)
+
+	if err := listenPaymentProjection(manager, streamName, cfg, c); err != nil {
 		return nil, err
 	}
 
@@ -119,15 +121,13 @@ func newPaymentRepository(
 
 // listenPaymentProjection executes the payment projection and listens to any changes to the event store
 func listenPaymentProjection(
-	db *sqlx.DB,
 	manager *postgres.SingleStreamManager,
 	streamName goengine.StreamName,
 	cfg Config,
-	logger *logrus.Logger,
+	c *Container,
 ) error {
+	logger := c.Logger()
 	ctx := log.ToContext(context.Background(), logger)
-
-	paymentStorage := storage.NewPaymentStorage(db, transactionPaymentTable)
 
 	projection := projection.NewProjection(transactionPaymentTable, streamName, func() interface{} {
 		return store.PaymentState()
@@ -135,13 +135,13 @@ func listenPaymentProjection(
 
 	projection.RegisterMessageHandlers(map[string]goengine.MessageHandler{
 		transactionPaymentCreated۰v0: message.PaymentCreatedHandler۰v0(
-			paymentStorage,
+			c.PaymentCreator(),
 		),
 		transactionPaymentBeneficiaryUpdated۰v0: message.PaymentBeneficiaryUpdatedHandler۰v0(
-			paymentStorage,
+			c.PaymentBeneficiaryUpdater(),
 		),
 		transactionPaymentDeleted: message.PaymentDeletedHandler(
-			paymentStorage,
+			c.PaymentDeleter(),
 		),
 	})
 

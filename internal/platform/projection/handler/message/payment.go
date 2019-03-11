@@ -60,11 +60,6 @@ type PaymentBeneficiaryUpdater interface {
 	UpdateBeneficiary(ctx context.Context, ID aggregate.ID, beneficiary transaction.BankAccount) error
 }
 
-// PaymentDeleter defines the way to delete the payment's beneficiary
-type PaymentDeleter interface {
-	Delete(ctx context.Context, ID aggregate.ID) error
-}
-
 // PaymentBeneficiaryUpdatedHandler۰v0 updates a payment's beneficiary handler for notifier messages
 //
 // This handler handle all those state messages trigger when a payment's beneficiary is updated.
@@ -88,6 +83,11 @@ func PaymentBeneficiaryUpdatedHandler۰v0(updater PaymentBeneficiaryUpdater) goe
 
 		return state, nil
 	}
+}
+
+// PaymentDeleter defines the way to delete the payment's beneficiary
+type PaymentDeleter interface {
+	Delete(ctx context.Context, ID aggregate.ID) error
 }
 
 // PaymentDeletedHandler updates a payment's beneficiary handler for notifier messages

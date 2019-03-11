@@ -241,7 +241,7 @@ type (
 		OrganisationID OrganisationID `json:"organisation_id" db:"organisation_id"`
 		Attributes     interface{}    `json:"attributes" db:"attributes"`
 
-		Deleted bool
+		Deleted bool `json:"-"`
 	}
 
 	// OrganisationID represents an UUID

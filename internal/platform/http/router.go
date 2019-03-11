@@ -28,5 +28,9 @@ func NewRouter(c *app.Container) chi.Router {
 	r.Method(http.MethodDelete, paymentDeleteURI, payment.NewDeleteHandler(c))
 	logger.Debugf("added `%s %s` route", http.MethodDelete, paymentDeleteURI)
 
+	paymentGetURI := "/v1/transaction/payments/{id}"
+	r.Method(http.MethodGet, paymentGetURI, payment.NewGetHandler(c))
+	logger.Debugf("added `%s %s` route", http.MethodGet, paymentGetURI)
+
 	return r
 }

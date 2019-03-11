@@ -69,3 +69,31 @@ func decodeDeleteRequest(_ context.Context, r *http.Request) (interface{}, error
 
 	return &form, nil
 }
+
+// GetRequest represents the request inputs considered to get a payment
+type GetRequest struct {
+	ID aggregate.ID
+}
+
+// Validate validates GetRequest
+func (pr GetRequest) Validate() error {
+	return validation.ValidateStruct(
+		&pr,
+		// ID cannot be empty and must be uuid
+		validation.Field(&pr.ID, validation.Required, is.UUID),
+	)
+}
+
+// decodeGetRequest decode request into Form
+func decodeGetRequest(_ context.Context, r *http.Request) (GetRequest, error) {
+	var form GetRequest
+
+	ID, err := aggregate.IDFromString(chi.URLParam(r, "id"))
+	if err != nil {
+		return GetRequest{}, err
+	}
+
+	form.ID = ID
+
+	return form, nil
+}
