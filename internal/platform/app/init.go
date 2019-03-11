@@ -30,7 +30,8 @@ const (
 	transactionProjectionsTable = "transaction_projections"
 	transactionPaymentTable     = "transaction_payment"
 
-	transactionPaymentCreated۰v0 = "transaction_payment_created_v0"
+	transactionPaymentCreated۰v0            = "transaction_payment_created_v0"
+	transactionPaymentBeneficiaryUpdated۰v0 = "transaction_payment_beneficiary_updated_v0"
 )
 
 // NewAppContainer initializes application container
@@ -85,6 +86,9 @@ func newPaymentRepository(
 		transactionPaymentCreated۰v0: func() interface{} {
 			return transaction.PaymentCreated۰v0{}
 		},
+		transactionPaymentBeneficiaryUpdated۰v0: func() interface{} {
+			return transaction.PaymentBeneficiaryUpdated۰v0{}
+		},
 	}); err != nil {
 		return nil, err
 	}
@@ -127,6 +131,8 @@ func listenPaymentProjection(
 
 	projection.RegisterMessageHandlers(map[string]goengine.MessageHandler{
 		transactionPaymentCreated۰v0: message.TransactionPaymentCreatedHandler۰v0(
+			paymentStorage,
+		), transactionPaymentBeneficiaryUpdated۰v0: message.TransactionPaymentBeneficiaryUpdatedHandler۰v0(
 			paymentStorage,
 		),
 	})

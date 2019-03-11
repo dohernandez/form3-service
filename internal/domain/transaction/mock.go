@@ -1,6 +1,10 @@
 package transaction
 
-import "github.com/dohernandez/form3-service/pkg/must"
+import (
+	"github.com/dohernandez/form3-service/pkg/must"
+	"github.com/google/uuid"
+	"github.com/hellofresh/goengine/aggregate"
+)
 
 // NewPersonMock creates a Person mock for tests
 // nolint:unused
@@ -114,5 +118,31 @@ func NewFxMock() FX {
 func NewProcessingDateMock() ProcessingDate {
 	return ProcessingDate{
 		must.ParseTime("2017-01-18", ProcessingDateLayout),
+	}
+}
+
+// NewPaymentCreated۰v0Mock creates a PaymentCreated۰v0 mock for tests
+// nolint:unused
+func NewPaymentCreated۰v0Mock() PaymentCreated۰v0 {
+	aggregateID := aggregate.GenerateID()
+	organisationID := OrganisationID(uuid.New().String())
+	payment۰v0 := NewPayment۰v0Mock()
+
+	return PaymentCreated۰v0{
+		ID:             aggregateID,
+		OrganisationID: organisationID,
+		Attributes:     payment۰v0,
+	}
+}
+
+// NewPaymentBeneficiaryUpdated۰v0Mock creates a PaymentBeneficiaryUpdated۰v0 mock for tests
+// nolint:unused
+func NewPaymentBeneficiaryUpdated۰v0Mock() PaymentBeneficiaryUpdated۰v0 {
+	aggregateID := aggregate.GenerateID()
+	beneficiary := NewBankAccountMock()
+
+	return PaymentBeneficiaryUpdated۰v0{
+		ID:          aggregateID,
+		Beneficiary: beneficiary,
 	}
 }

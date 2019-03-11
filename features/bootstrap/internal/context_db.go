@@ -2,10 +2,9 @@ package internal
 
 import (
 	"encoding/json"
-
 	"fmt"
-
 	"strings"
+	"time"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
@@ -51,6 +50,8 @@ func RegisterDBContext(s *godog.Suite, db *sqlx.DB) *DBContext {
 
 	s.Step(`^the following payment\(s\) should be stored in the table "([^"]*)"$`, c.theFollowingPaymentsShouldBeStoredInTheTable)
 	s.Step(`^the following payment state should be stored in the table "([^"]*)"$`, c.theFollowingPaymentStateShouldBeStoredInTheTable)
+	s.Step(`^that the following payment state\(s\) are stored in the table "([^"]*)"$`, c.thatTheFollowingPaymentStatesAreStoredInTheTable)
+	s.Step(`^that the following payment\(s\) are stored in the table "([^"]*)"$`, c.thatTheFollowingPaymentsAreStoredInTheTable)
 
 	return &c
 }
@@ -152,22 +153,26 @@ func (c *DBContext) theFollowingPaymentStateShouldBeStoredInTheTable(table strin
 }
 
 func (c *DBContext) paymentStateValueWhereBuilder(col, v string, position int) (string, interface{}) {
-	if col == "METADATA" {
-		var value struct {
-			ID      string `json:"_aggregate_id"`
-			Type    string `json:"_aggregate_type"`
-			Version int    `json:"_aggregate_version"`
+	if col == "METADATA" || col == "metadata" {
+		if col == "METADATA" {
+			var value struct {
+				ID      string `json:"_aggregate_id"`
+				Type    string `json:"_aggregate_type"`
+				Version int    `json:"_aggregate_version"`
+			}
+
+			err := json.Unmarshal([]byte(v), &value)
+			must.NotFail(err)
+
+			value.ID = c.paymentIDs[value.ID]
+
+			vb, err := json.Marshal(value)
+			must.NotFail(err)
+
+			return fmt.Sprintf("%s @> $%d", strings.ToLower(col), position), vb
 		}
 
-		err := json.Unmarshal([]byte(v), &value)
-		must.NotFail(err)
-
-		value.ID = c.paymentIDs[value.ID]
-
-		vb, err := json.Marshal(value)
-		must.NotFail(err)
-
-		return fmt.Sprintf("%s @> $%d", strings.ToLower(col), position), vb
+		return fmt.Sprintf("%s @> $%d", strings.ToLower(col), position), v
 	}
 
 	if v == "" {
@@ -175,4 +180,28 @@ func (c *DBContext) paymentStateValueWhereBuilder(col, v string, position int) (
 	}
 
 	return fmt.Sprintf("%s = $%d", col, position), v
+}
+
+func (c *DBContext) thatTheFollowingPaymentStatesAreStoredInTheTable(table string, data *gherkin.DataTable) error {
+	err := c.RunStoreData(table, data, nil)
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(1 * time.Second)
+
+	return nil
+}
+
+func (c *DBContext) thatTheFollowingPaymentsAreStoredInTheTable(table string, data *gherkin.DataTable) error {
+	cIds, err := c.theFollowingElementsShouldBeStoredInTheTable("", "id", table, data, c.paymentValueWhereBuilder)
+	if err != nil {
+		return err
+	}
+
+	for k, id := range cIds {
+		c.paymentIDs[k] = id
+	}
+
+	return nil
 }

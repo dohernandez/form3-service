@@ -365,6 +365,7 @@
     "github.com/go-chi/render",
     "github.com/go-ozzo/ozzo-validation",
     "github.com/go-ozzo/ozzo-validation/is",
+    "github.com/google/uuid",
     "github.com/hellofresh/goengine",
     "github.com/hellofresh/goengine/aggregate",
     "github.com/hellofresh/goengine/driver/sql",

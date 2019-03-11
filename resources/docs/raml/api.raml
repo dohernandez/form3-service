@@ -57,25 +57,7 @@ types:
         type: number
         format: float
       beneficiary_party:
-        type: object
-        properties:
-          account_name:
-            type: string
-          account_number:
-            type: string
-          account_number_code:
-            type: string
-          account_type?:
-            type: integer
-          address:
-            type: string
-          bank_id:
-            type: integer
-            format: int16
-          bank_id_code:
-            type: string
-          name:
-            type: string
+        type: BankAccount
       charges_information:
         type: object
         properties:
@@ -99,23 +81,7 @@ types:
       currency:
         type: string
       debtor_party:
-        type: object
-        properties:
-          account_name:
-            type: string
-          account_number:
-            type: string
-          account_number_code:
-            type: string
-          address:
-            type: string
-          bank_id:
-            type: integer
-            format: int16
-          bank_id_code:
-            type: string
-          name:
-            type: string
+        type: BankAccount
       end_to_end_reference:
         type: string
       fx:
@@ -163,6 +129,27 @@ types:
           bank_id_code:
             type: string
 
+  BankAccount:
+    type: object
+    properties:
+      account_name:
+        type: string
+      account_number:
+        type: string
+      account_number_code:
+        type: string
+      account_type?:
+        type: integer
+      address:
+        type: string
+      bank_id:
+        type: integer
+        format: int16
+      bank_id_code:
+        type: string
+      name:
+        type: string
+
   ErrorResponse:
     type: object
     properties:
@@ -192,7 +179,7 @@ types:
   /transaction:
     /payments:
       post:
-        description: Create new transaction payment.
+        description: Create new payment.
         body:
           application/json:
             type: object
@@ -265,7 +252,7 @@ types:
                 }
               }
         responses:
-          '204':
+          '201':
             description: OK
             body:
               application/json:
@@ -369,3 +356,60 @@ types:
                     "status": "Internal Server Error",
                     "error": "goengine: unsupported empty event stream"
                   }
+      '/{id}':
+        uriParameters:
+          id:
+            description: The payment id. Format must be uuid.
+        /beneficiary:
+          patch:
+            description: Update beneficiary the given payment
+            body:
+              application/json:
+                type: BankAccount
+                example: |
+                    {
+                      "account_name": "W Connor",
+                      "account_number": "31926812",
+                      "account_number_code": "BBAN",
+                      "account_type": 0,
+                      "address": "1 The Beneficiary Localtown SE2",
+                      "bank_id": "403000",
+                      "bank_id_code": "GBDSC",
+                      "name": "Wilfred Jeremiah Connor"
+                    }
+            responses:
+              '204':
+                description: OK
+
+              '400':
+                description: Bad Request
+                body:
+                  application/json:
+                    type: ErrorResponse
+                    example: |
+                      {
+                        "status": "Bad Request",
+                        "error": "Decoding post json body: invalid character ']' looking for beginning of value"
+                      }
+
+              '412':
+                description: Precondition Failed
+                body:
+                  application/json:
+                    type: ErrorResponse
+                    example: |
+                      {
+                        "status": "Precondition Failed",
+                        "error": "account_name: cannot be blank."
+                      }
+
+              '500':
+                description: Internal Server Error
+                body:
+                  application/json:
+                    type: ErrorResponse
+                    example: |
+                      {
+                        "status": "Internal Server Error",
+                        "error": "goengine: unsupported empty event stream"
+                      }
