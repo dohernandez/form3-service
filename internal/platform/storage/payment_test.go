@@ -306,7 +306,7 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestGetPayment(t *testing.T) {
+func TestFindPayment(t *testing.T) {
 	aggregateID := aggregate.GenerateID()
 	version := transaction.Version0
 	organisationID := transaction.OrganisationID(uuid.New().String())
@@ -317,7 +317,7 @@ func TestGetPayment(t *testing.T) {
 
 		assert func(
 			mock sqlmock.Sqlmock,
-			ID aggregate.ID,
+			row *transaction.Payment,
 			table string,
 		)
 
@@ -327,10 +327,10 @@ func TestGetPayment(t *testing.T) {
 			scenario: "Select payment successful",
 			assert: func(
 				mock sqlmock.Sqlmock,
-				ID aggregate.ID,
+				row *transaction.Payment,
 				table string,
 			) {
-				attrs, err := json.Marshal(attributes)
+				attrs, err := json.Marshal(row.Attributes)
 				assert.NoError(t, err)
 
 				mock.ExpectBegin()
@@ -340,16 +340,16 @@ func TestGetPayment(t *testing.T) {
 					`^SELECT \* FROM %[1]s WHERE id = \$1$`,
 					table,
 				)).WithArgs(
-					ID,
+					row.ID,
 				).WillReturnRows(sqlmock.NewRows([]string{
 					"id",
 					"version",
 					"organisation_id",
 					"attributes",
 				}).AddRow(
-					aggregateID,
-					version,
-					organisationID,
+					row.ID,
+					row.Version,
+					row.OrganisationID,
 					attrs,
 				))
 
@@ -360,7 +360,7 @@ func TestGetPayment(t *testing.T) {
 			scenario: "Select payment unsuccessful, not found",
 			assert: func(
 				mock sqlmock.Sqlmock,
-				ID aggregate.ID,
+				row *transaction.Payment,
 				table string,
 			) {
 				mock.ExpectBegin()
@@ -370,7 +370,7 @@ func TestGetPayment(t *testing.T) {
 					`^SELECT \* FROM %[1]s WHERE id = \$1$`,
 					table,
 				)).WithArgs(
-					ID,
+					row.ID,
 				).WillReturnError(sql.ErrNoRows)
 
 				mock.ExpectRollback()
@@ -381,7 +381,7 @@ func TestGetPayment(t *testing.T) {
 			scenario: "Select payment unsuccessful, tx error",
 			assert: func(
 				mock sqlmock.Sqlmock,
-				ID aggregate.ID,
+				row *transaction.Payment,
 				table string,
 			) {
 				mock.ExpectBegin()
@@ -391,7 +391,7 @@ func TestGetPayment(t *testing.T) {
 					`^SELECT \* FROM %[1]s WHERE id = \$1$`,
 					table,
 				)).WithArgs(
-					ID,
+					row.ID,
 				).WillReturnError(sql.ErrTxDone)
 
 				mock.ExpectRollback()
@@ -407,7 +407,14 @@ func TestGetPayment(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc // Pinning ranged variable, more info: https://github.com/kyoh86/scopelint
 		t.Run(tc.scenario, func(t *testing.T) {
-			tc.assert(dbMock.Sqlmock, aggregateID, table)
+			row := transaction.Payment{
+				ID:             aggregateID,
+				Version:        version,
+				OrganisationID: organisationID,
+				Attributes:     attributes,
+			}
+
+			tc.assert(dbMock.Sqlmock, &row, table)
 
 			payment, err := paymentFindByID.Find(
 				context.TODO(),
@@ -418,12 +425,126 @@ func TestGetPayment(t *testing.T) {
 				assert.EqualError(t, err, tc.err.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, &transaction.Payment{
-					ID:             aggregateID,
-					Version:        version,
+				assert.Equal(t, &row, payment)
+			}
+
+			err = dbMock.Sqlmock.ExpectationsWereMet()
+			assert.NoErrorf(t, err, "there were unfulfilled expectations: %s", err)
+		})
+	}
+}
+
+func TestFindAllPayment(t *testing.T) {
+	aggregateID1 := aggregate.GenerateID()
+	aggregateID2 := aggregate.GenerateID()
+
+	version := transaction.Version0
+	organisationID := transaction.OrganisationID(uuid.New().String())
+	attributes1 := transaction.NewPayment۰v0Mock()
+	attributes2 := transaction.NewPayment۰v0Mock()
+
+	testCases := []struct {
+		scenario string
+
+		assert func(
+			mock sqlmock.Sqlmock,
+			rows []*transaction.Payment,
+			table string,
+		)
+
+		err error
+	}{
+		{
+			scenario: "Select all payment successful",
+			assert: func(
+				mock sqlmock.Sqlmock,
+				rows []*transaction.Payment,
+				table string,
+			) {
+				attrs1, err := json.Marshal(rows[0].Attributes)
+				assert.NoError(t, err)
+
+				attrs2, err := json.Marshal(rows[1].Attributes)
+				assert.NoError(t, err)
+
+				mock.ExpectBegin()
+
+				// #nosec G201
+				mock.ExpectQuery(fmt.Sprintf(
+					`^SELECT \* FROM %[1]s$`,
+					table,
+				)).WillReturnRows(sqlmock.NewRows([]string{
+					"id",
+					"version",
+					"organisation_id",
+					"attributes",
+				}).AddRow(
+					rows[0].ID,
+					rows[0].Version,
+					rows[0].OrganisationID,
+					attrs1,
+				).AddRow(
+					rows[1].ID,
+					rows[1].Version,
+					rows[1].OrganisationID,
+					attrs2,
+				))
+
+				mock.ExpectCommit()
+			},
+		},
+		{
+			scenario: "Select all payment unsuccessful, tx error",
+			assert: func(
+				mock sqlmock.Sqlmock,
+				rows []*transaction.Payment,
+				table string,
+			) {
+				mock.ExpectBegin()
+
+				// #nosec G201
+				mock.ExpectQuery(fmt.Sprintf(
+					`^SELECT \* FROM %[1]s$`,
+					table,
+				)).WillReturnError(sql.ErrTxDone)
+
+				mock.ExpectRollback()
+			},
+			err: sql.ErrTxDone,
+		},
+	}
+
+	dbMock := mocked.NewDBMock(t)
+	defer dbMock.Close()
+
+	paymentFindAll := storage.NewPaymentStorage(dbMock.SqlxDB, table)
+	for _, tc := range testCases {
+		tc := tc // Pinning ranged variable, more info: https://github.com/kyoh86/scopelint
+		t.Run(tc.scenario, func(t *testing.T) {
+			rows := []*transaction.Payment{
+				{
+					ID:             aggregateID1,
 					OrganisationID: organisationID,
-					Attributes:     attributes,
-				}, payment)
+					Version:        version,
+					Attributes:     attributes1,
+				},
+				{
+					ID:             aggregateID2,
+					OrganisationID: organisationID,
+					Version:        version,
+					Attributes:     attributes2,
+				},
+			}
+
+			tc.assert(dbMock.Sqlmock, rows, table)
+
+			payments, err := paymentFindAll.FindAll(context.TODO())
+
+			if tc.err != nil {
+				assert.EqualError(t, err, tc.err.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.EqualValues(t, rows, payments)
 			}
 
 			err = dbMock.Sqlmock.ExpectationsWereMet()

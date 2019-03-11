@@ -32,5 +32,9 @@ func NewRouter(c *app.Container) chi.Router {
 	r.Method(http.MethodGet, paymentGetURI, payment.NewGetHandler(c))
 	logger.Debugf("added `%s %s` route", http.MethodGet, paymentGetURI)
 
+	paymentGetAllURI := "/v1/transaction/payments"
+	r.Method(http.MethodGet, paymentGetAllURI, payment.NewGetAllHandler(c))
+	logger.Debugf("added `%s %s` route", http.MethodGet, paymentGetAllURI)
+
 	return r
 }

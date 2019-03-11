@@ -270,6 +270,7 @@ api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `POS
 api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `PATCH /v1/transaction/payments/{id}/beneficiary` route","timestamp":"2019-03-08T01:14:02Z"}
 api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `DELETE /v1/transaction/payments/{id}` route","timestamp":"2019-03-08T01:14:02Z"}
 api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `GET /v1/transaction/payments/{id}` route","timestamp":"2019-03-08T01:14:02Z"}
+api_1       | 2019/03/08 01:14:02 stderr: {"level":"debug","message":"added `GET /v1/transaction/payments` route","timestamp":"2019-03-08T01:14:02Z"}
 api_1       | 2019/03/08 01:14:02 stderr: {"level":"info","message":"Starting server at port http://0.0.0.0:8000","timestamp":"2019-03-08T01:14:02Z"}
 ```
 
