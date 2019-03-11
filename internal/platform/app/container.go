@@ -84,3 +84,8 @@ func (c *Container) PaymentBeneficiaryUpdater() message.PaymentBeneficiaryUpdate
 func (c *Container) PaymentDeleter() message.PaymentDeleter {
 	return c.paymentStorage
 }
+
+// PaymentFindAll۰v0 returns app-level payment.FindAll۰v0 instance
+func (c *Container) PaymentFindAll۰v0() payment.FindAll۰v0 {
+	return c.paymentStorage
+}

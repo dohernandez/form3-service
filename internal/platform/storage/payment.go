@@ -165,3 +165,46 @@ func (s *PaymentStorage) Find(ctx context.Context, id aggregate.ID) (*transactio
 
 	return &payment, nil
 }
+
+var _ payment.FindByID۰v0 = new(PaymentStorage)
+
+// FindAll defines the way to get all the payment from the projection
+func (s *PaymentStorage) FindAll(ctx context.Context) ([]*transaction.Payment, error) {
+	logger := log.FromContext(ctx)
+
+	query := `SELECT * FROM %[1]s`
+	query = fmt.Sprintf(query, s.table)
+
+	if logger != nil {
+		logger.Debugf("exec in transaction sql %s", query)
+	}
+
+	var payments []*transaction.Payment
+
+	err := execInTransaction(s.db, func(tx *sqlx.Tx) error {
+		err := tx.SelectContext(ctx, &payments, query)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for k, payment := range payments {
+		var attrPayment۰v0 transaction.Payment۰v0
+
+		err = json.Unmarshal(payment.Attributes.([]uint8), &attrPayment۰v0)
+		if err != nil {
+			return nil, err
+		}
+
+		payment.Attributes = attrPayment۰v0
+
+		payments[k] = payment
+	}
+
+	return payments, nil
+}
