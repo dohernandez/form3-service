@@ -52,6 +52,7 @@ func RegisterDBContext(s *godog.Suite, db *sqlx.DB) *DBContext {
 	s.Step(`^the following payment state should be stored in the table "([^"]*)"$`, c.theFollowingPaymentStateShouldBeStoredInTheTable)
 	s.Step(`^that the following payment state\(s\) are stored in the table "([^"]*)"$`, c.thatTheFollowingPaymentStatesAreStoredInTheTable)
 	s.Step(`^that the following payment\(s\) are stored in the table "([^"]*)"$`, c.thatTheFollowingPaymentsAreStoredInTheTable)
+	s.Step(`^the following payment\(s\) should not be stored in the table "([^"]*)"$`, c.theFollowingPaymentsShouldNotBeStoredInTheTable)
 
 	return &c
 }
@@ -201,6 +202,15 @@ func (c *DBContext) thatTheFollowingPaymentsAreStoredInTheTable(table string, da
 
 	for k, id := range cIds {
 		c.paymentIDs[k] = id
+	}
+
+	return nil
+}
+
+func (c *DBContext) theFollowingPaymentsShouldNotBeStoredInTheTable(table string, data *gherkin.DataTable) error {
+	_, err := c.RunNoExistData("id", table, data, c.paymentValueWhereBuilder, nil)
+	if err != nil {
+		return err
 	}
 
 	return nil

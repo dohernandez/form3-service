@@ -95,3 +95,20 @@ type paymentBeneficiaryUpdaterMock struct {
 func (m *paymentBeneficiaryUpdaterMock) UpdateBeneficiary(ctx context.Context, id aggregate.ID, beneficiary transaction.BankAccount) error {
 	return m.beneficiaryUpdaterFunc(id, beneficiary)
 }
+
+// NewCallbackPaymentDeleterMock creates a callback mock for tests
+// nolint:unused
+func NewCallbackPaymentDeleterMock(deleterFunc func(ID aggregate.ID) error) PaymentDeleter {
+	return &paymentDeleterMock{
+		deleterFunc: deleterFunc,
+	}
+}
+
+// nolint:unused
+type paymentDeleterMock struct {
+	deleterFunc func(ID aggregate.ID) error
+}
+
+func (m *paymentDeleterMock) Delete(ctx context.Context, id aggregate.ID) error {
+	return m.deleterFunc(id)
+}

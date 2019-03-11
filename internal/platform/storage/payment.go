@@ -41,7 +41,6 @@ func (s *PaymentStorage) Create(
 	logger := log.FromContext(ctx)
 
 	query := `INSERT INTO %[1]s (id, version, organisation_id, attributes) VALUES ($1, $2, $3, $4)`
-
 	query = fmt.Sprintf(query, s.table)
 
 	if logger != nil {
@@ -77,8 +76,32 @@ func (s *PaymentStorage) UpdateBeneficiary(ctx context.Context, id aggregate.ID,
 	query := `UPDATE %[1]s 
 			  SET attributes = attributes::jsonb || '{"beneficiary_party": %[2]s}'::jsonb
 			  WHERE id = $1`
-
 	query = fmt.Sprintf(query, s.table, string(jsBeneficiary))
+
+	if logger != nil {
+		logger.Debugf("exec in transaction sql %s, values %+v", query, []interface{}{
+			id,
+		})
+	}
+
+	return execInTransaction(s.db, func(tx *sqlx.Tx) error {
+		_, err := tx.ExecContext(ctx, query, id)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+var _ message.PaymentDeleter = new(PaymentStorage)
+
+// Delete defines the way to delete the payment in the projection
+func (s *PaymentStorage) Delete(ctx context.Context, id aggregate.ID) error {
+	logger := log.FromContext(ctx)
+
+	query := `DELETE FROM %[1]s WHERE id = $1`
+	query = fmt.Sprintf(query, s.table)
 
 	if logger != nil {
 		logger.Debugf("exec in transaction sql %s, values %+v", query, []interface{}{
