@@ -24,13 +24,16 @@ export CFLAGS
 
 ## Init the application, usage: "make init API_PORT=<service-api-port> POSTGRES_PORT=<postgres-port>"
 ##
+## Requirement:
+##   export FORM3_SERVICE_HOST_PORT=<service-api-port>
+##   export FORM3_POSTGRES_HOST_PORT=<postgres-port>
+##
 ## Arguments:
 ##   API_PORT     		Requires port to run the service
 ##   POSTGRES_PORT     	Requires port to run the postgres
 init: envfile deps
-	@printf ">> "
+	@echo ">> run those commands to set the value to the variables env"
 	export FORM3_SERVICE_HOST_PORT=${API_PORT}
-	@printf ">> "
 	export FORM3_POSTGRES_HOST_PORT=${POSTGRES_PORT}
 
 ## -- Misc --
