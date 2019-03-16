@@ -1,0 +1,19 @@
+language: go
+
+sudo: false
+
+go:
+  - 1.11.x
+
+stages:
+  - "Code Style"
+  - "Unit Tests"
+
+jobs:
+  include:
+    - stage: "Code Style"
+      script: ci/scripts/code-style.sh
+
+    - stage: "Unit Tests"
+      install: make deps
+      script: make test-unit
