@@ -5,7 +5,6 @@ set -e
 echo "Configuration"
 FILE_EXTENSIONS='\.go$'
 
-COPY_SOURCE=true
 PROJECT_SRC="${GOPATH}"/src/"${GOPACKAGE}"
 
 # Detect the changed files

@@ -6,9 +6,10 @@ go:
   - 1.11.x
 
 stages:
+  - "Build Docker Image"
   - "Code Style"
   - "Unit Tests"
-  - "Integration Test"
+#  - "Integration Test"
 
 jobs:
   include:
@@ -19,27 +20,38 @@ jobs:
       install: make deps
       script: make test-unit
 
-    - stage: "Integration Test"
-      before_install:
-        # Docker Compose Install
-        - curl -L https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin
-        # Download and install Docker libs
-        - curl -L https://github.com/Ortus-Solutions/docker-buildfiles/archive/master.zip > docker.zip
-        - unzip docker.zip -d workbench
-        - mv workbench/docker-buildfiles-master workbench/docker
-        # CommandBox Keys
-        - sudo apt-key adv --keyserver keys.gnupg.net --recv 6DA70622
-        - sudo echo "deb http://downloads.ortussolutions.com/debs/noarch /" | sudo tee -a
-            /etc/apt/sources.list.d/commandbox.list
-      install:
-        # Core testing install
-        - sudo apt-get update && sudo apt-get --assume-yes install commandbox
-        - box install
-        - box server start
-      script: make docker test-integration
+    - stage: "Build Docker Image"
+      script:
+        - export REPO=quay.io/dohernandez/form3-service
+        - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST ; fi`
+        - docker build -t $REPO:$COMMIT . --cache-from $REPO::latest
+        - docker tag $REPO:$COMMIT $REPO:$TAG
+        - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+        - docker images
       env:
-        - COMPOSE_VERSION=1.23.2
-        - FORM3_SERVICE_HOST_PORT=8000
-        - FORM3_POSTGRES_HOST_PORT=5432
+        - COMMIT=${TRAVIS_COMMIT::8}
+
+#    - stage: "Integration Test"
+#      before_install:
+#        # Docker Compose Install
+#        - curl -L https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+#        - chmod +x docker-compose
+#        - sudo mv docker-compose /usr/local/bin
+#        # Download and install Docker libs
+#        - curl -L https://github.com/Ortus-Solutions/docker-buildfiles/archive/master.zip > docker.zip
+#        - unzip docker.zip -d workbench
+#        - mv workbench/docker-buildfiles-master workbench/docker
+#        # CommandBox Keys
+#        - sudo apt-key adv --keyserver keys.gnupg.net --recv 6DA70622
+#        - sudo echo "deb http://downloads.ortussolutions.com/debs/noarch /" | sudo tee -a
+#            /etc/apt/sources.list.d/commandbox.list
+#      install:
+#        # Core testing install
+#        - sudo apt-get update && sudo apt-get --assume-yes install commandbox
+#        - box install
+#        - box server start
+#      script: make docker test-integration
+#      env:
+#        - COMPOSE_VERSION=1.23.2
+#        - FORM3_SERVICE_HOST_PORT=8000
+#        - FORM3_POSTGRES_HOST_PORT=5432

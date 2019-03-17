@@ -11,7 +11,14 @@ RUN  curl -sL https://github.com/golang-migrate/migrate/releases/download/v4.2.4
 
 COPY . .
 
-RUN make build
+RUN make deps-vendor build
+
+# Documentation builder
+FROM mattjtodd/raml2html:7.2.0 AS docs-builder
+
+COPY resources/docs /resources/docs
+
+RUN raml2html  -i "/resources/docs/raml/api.raml" -o "/resources/docs/api.html"
 
 FROM ubuntu:bionic
 
@@ -19,7 +26,8 @@ RUN groupadd -r dohernandez && useradd --no-log-init -r -g dohernandez dohernand
 USER dohernandez
 
 COPY --from=builder --chown=dohernandez:dohernandez /go/src/github.com/dohernandez/form3-service/bin/form3-service /bin/form3-service
-COPY --from=builder --chown=hellofresh:hellofresh /bin/migrate /bin/migrate
+COPY --from=builder --chown=dohernandez:dohernandez /bin/migrate /bin/migrate
+COPY --from=docs-builder /resources/docs/api.html /resources/docs/api.html
 
 COPY resources/migrations /resources/migrations
 
