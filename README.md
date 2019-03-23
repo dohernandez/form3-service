@@ -1,5 +1,9 @@
 # Form3 Service
 
+[![Coverage Status](https://coveralls.io/repos/github/dohernandez/form3-service/badge.svg?branch=master)](https://coveralls.io/github/dohernandez/form3-service?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/de83a0447761409ca23f04821032a248)](https://www.codacy.com/app/dohernandez/form3-service?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dohernandez/form3-service&amp;utm_campaign=Badge_Grade)
+[![Docker Repository on Quay](https://quay.io/repository/dohernandez/form3-service/status?token=0f8d87f7-260b-4f66-a2b6-3ac18d6dc99c "Docker Repository on Quay")](https://quay.io/repository/dohernandez/form3-service)
+
 The form3-service (The service) is a service responsible to manage payment resources. It allows to create, delete payments; to update payment's beneficiary and to retrieve a single payment or a list of payment.
 
 The service persist each payment's state, so that we can have a history of all the changes made to a payment.   
