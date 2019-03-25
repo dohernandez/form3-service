@@ -2,30 +2,33 @@ language: go
 
 sudo: false
 
-go:
-  - 1.11.x
-
 stages:
   - "Code Style"
-  - "Integration Test"
   - "Unit Tests"
+  - "Integration Test"
   - "Docker Image"
+
+matrix:
+    include:
+    - go: 1.11.x
+      install: make deps
 
 jobs:
   include:
     - stage: "Code Style"
+      install: skip
       script: ci/scripts/code-style.sh
+      if: branch = master || type = pull_request
 
     - stage: "Unit Tests"
       install:
         - go get github.com/mattn/goveralls
-        - make deps
       script: make test-unit
       after_script:
-        - cat overalls.coverprofile
         # Upload coverage results
         # Example https://docs.coveralls.io/go
         - $HOME/gopath/bin/goveralls -coverprofile=overalls.coverprofile -service=travis-ci -repotoken $CODECOV_TOKEN
+      if: branch = master || type = pull_request
 
     - stage: "Integration Test"
       before_install:
@@ -47,17 +50,16 @@ jobs:
         - box install
         - box server start
         - go get github.com/mattn/goveralls
-        - make deps
       before_script:
         - docker-compose -f ci/assets/docker-compose.yml up -d
         - make migrate
       script: make test-integration
       after_script:
         - docker-compose -f ci/assets/docker-compose.yml down
-        - cat features/bootstrap/profile.coverprofile
         # Upload coverage results
         # Example https://docs.coveralls.io/go
         - $HOME/gopath/bin/goveralls -coverprofile=features/bootstrap/profile.coverprofile -service=travis-ci -repotoken $CODECOV_TOKEN
+      if: branch = master || type = pull_request
       env:
         - COMPOSE_VERSION=1.23.2
         # service environment variables Example .env.template
@@ -68,6 +70,7 @@ jobs:
         - DATABASE_DSN=postgres://user:password@localhost:5434/form3-service?sslmode=disable
 
     - stage: "Docker Image"
+      install: skip
       script:
         - export REPO=quay.io/dohernandez/form3-service
         - export TAG=`if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then echo "PR-${TRAVIS_PULL_REQUEST}"; else "latest"; fi`
