@@ -4,9 +4,12 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/de83a0447761409ca23f04821032a248)](https://www.codacy.com/app/dohernandez/form3-service?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dohernandez/form3-service&amp;utm_campaign=Badge_Grade)
 [![Docker Repository on Quay](https://quay.io/repository/dohernandez/form3-service/status?token=0f8d87f7-260b-4f66-a2b6-3ac18d6dc99c "Docker Repository on Quay")](https://quay.io/repository/dohernandez/form3-service)
 
-The form3-service (The service) is a service responsible to manage payment resources. It allows to create, delete payments; to update payment's beneficiary and to retrieve a single payment or a list of payment.
+Form3-service (Service) is a service responsible for managing payment resources. It allows to create, to delete payments; to update payment's beneficiary and to retrieve a single payment or a list of payments.
 
-The service persist each payment's state, so that we can have a history of all the changes made to a payment.   
+Service persist each payment's state, so that there is a history of all changes made to payments.   
+
+## Requirements notation
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC2119](http://tools.ietf.org/html/rfc2119).
 
 ## Table of Contents
 
@@ -25,7 +28,7 @@ The service persist each payment's state, so that we can have a history of all t
 
 ### Prerequisites
 
-You need to make sure that you have `go1.11` or later, `make` and `docker` installed
+You need to make sure that you have `go v1.11` or later, `make` and `docker` installed
 
 ```
 $ which make
@@ -36,13 +39,13 @@ $ which docker
 /usr/local/bin/docker
 ```
 
-There is no other prerequisite needed in order to setup this project for development.
+There aren't any other prerequisites needed to setup this project for development.
 
 [[table of contents]](#table-of-contents)
 
-### Getting the source
+### Getting the source code
 
-Setup the project structure and fetch the repo like so:
+Setup the project structure and fetch the repo as following:
  
 ```bash
 go get github.com/dohernandez/form3-service
@@ -53,8 +56,8 @@ go get github.com/dohernandez/form3-service
 This project follows the following structure:
 
 ```markdown
-|-- cmd # MUST be used as a main entrypoint, one folder for each binary
-	|-- servid # For simple application logic setup is done here
+|-- cmd # MUST be used as a main entrypoint, one folder per binary
+	|-- servid # For simple application logic. Setup is done here
 		|-- servid.go
 |-- internal # contains application specific non-reusable by any other projects code 
 	|-- domain # domain packages
@@ -74,14 +77,14 @@ This project follows the following structure:
                             |-- encode.go # MUST contains encode response func
                             |-- post.go # MUST contains handler func
 			|-- routes.go  # MUST contains routes
-			|-- config.go # MUST contains the service configuration
+			|-- config.go # MUST contains the service configurations
 			|-- container.go # MUST contains service resources
 			|-- init.go # MUST initialize the service resources
 		|-- projection
 			|-- handler # projection handler grouped by projection
 				|-- message
 				        |-- payment.go
-		|-- storage # MUST contains the abstraction of data (removing, updating, and selecting items from collection)
+		|-- storage # MUST contains the data abstraction (removing, updating, and selecting items from collection)
 		    |-- payment.go	            
 |-- pkg # MUST NOT import internal packages. Packages placed here should be considered as vendor.
 	|-- http
@@ -117,46 +120,46 @@ This project follows the following structure:
     
 `pkg`
     
-    * Can't import import `internal` packages. 
+    * Can't import `internal` packages. 
     * Packages placed here should be considered as vendor.
     * Stick to the testing package in go.
     * NOT allowed to panic an application.
     * NOT allowed to wrap errors.
     * Return only root cause error values.
     * NOT allowed to set policy about any application concerns.
-    * NOT allowed to log, but access to trace information must be decoupled.
+    * NOT allowed to log. Access to trace information must be decoupled.
     * Configuration and runtime changes must be decoupled.
     * Retrieving metric and telemetry values must be decoupled.
     * Stick to the testing package in go.
     * Test files belong inside the package.
-    * Focus more on unit than integration testing.
+    * Focus more on unit than integration tests.
     
 `internal\domain`
     
     * NOT allowed to panic an application.
     * Allowed to wrap errors when domain concern.
     * Wrap errors with context if not being handled.
-    * Allowed to set policy about any application concerns.
-    * Allowed to log and handle configuration natively.
+    * Allowed to set policies about any application concerns.
+    * Allowed to log and handle configurations natively.
     * Minority of handling errors happen here.
     * Stick to the testing package in go.
     * Test files belong inside the package.
-    * Focus more on unit than integration testing.
-    * Package at the same level are not allowed to import each other.
+    * Focus more on unit than integration tests.
+    * Packages at the same level are not allowed to import each other.
     * Package root can import subpackages.
     * Can't import `internal\platform` package
 
 `internal\platform`
     
     * NOT allowed to panic an application.
-    * NOT allowed to set policy about any application concerns.
-    * NOT allowed to log, but access to trace information must be decoupled.
+    * NOT allowed to set policies about application concerns.
+    * NOT allowed to log. Access to trace information must be decoupled.
     * Configuration and runtime changes must be decoupled.
     * Retrieving metric and telemetry values must be decoupled.
     * Return only root cause error values.
     * Stick to the testing package in go.
     * Test files belong inside the package.
-    * Focus more on unit than integration testing.
+    * Focus more on unit than integration tests.
     * Packages can import each other.
     * Can import `internal\domain` package
     
@@ -243,7 +246,7 @@ Usage
 
 #### Application run
 
-The first thing you need to do is, init the application, create the `.env` file with the server configuration and set up the environment variable `FORM3_SERVICE_HOST_PORT`. To do so, run the command
+At first, the application MUST be initialized. Create the `.env` file with the server configuration and set up the environment variable `FORM3_SERVICE_HOST_PORT`. To do so, run the command:
 
 ```bash
 make init API_PORT=8008 POSTGRES_PORT=5434
@@ -258,9 +261,9 @@ export FORM3_POSTGRES_HOST_PORT=5434
 
 ```
 
-It will create the `.env` file for you based on `.env.template` file and print how to set the environment variable require in your environment.
+It will create the `.env` file for you based on `.env.template` file and print how to set up the environment variables required in your environment.
 
-After init the application and export the environment variables, you are able to start/stop the service at any time. 
+After the application is initialized and the environment variables are exported, you can start/stop the service at any time. 
 
 ```bash
 make servid-start
@@ -324,9 +327,9 @@ Removing network form3-service_default
 
 Documentation items are generated using raml generator. RAML file is located `resources/raml/api.raml`. 
 
-To update api documentation, run `make docs`.
+To update the api documentation, run `make docs`.
 
-To see the api documentation generated, you can access to the root of the service [http://localhost:8008](http://localhost:8008), it will show the link to the api documentation.
+To see the api documentation generated, please follow the link to the api documentation under the [service root](http://localhost:8008).
 
 ```html
 Welcome to form3-service. Please read API <a href="http://localhost:8008/docs/api.html">documentation</a>.
@@ -337,7 +340,7 @@ Welcome to form3-service. Please read API <a href="http://localhost:8008/docs/ap
 
 ### Testing 
 
-Before you can run the complete suite tests (unit test and behavioral test), make sure `.env` file is created and  `docker-compose` services to your `/etc/hosts`:
+Before running the test suite (unit test and behavioral test), make sure `.env` file is created and add following `docker-compose` service entries to your `/etc/hosts` (unix based systems):
 
 ```
 127.0.0.1 postgres
@@ -352,13 +355,13 @@ make env test
 otherwise see routine operations defined in `Makefile` to run each suite independently.
 
 
-Another way to run the complete suite tests is using docker where there is no need to add any entry into your `/etc/hosts`:
+Another way to run the complete test suite is using docker. By using docker, there is no need to add any entries to your `/etc/hosts`:
 
 ```
 make docker test
 ```
 
-This is the most simple way to quick start testing your app after cloning a repo, though it has low performance and is harder to debug.
+This is the most simple way to quickly start testing your app after cloning the repo, though it has low performance and is harder to debug.
 
 [[table of contents]](#table-of-contents)
 
